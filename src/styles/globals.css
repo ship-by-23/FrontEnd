@@ -1,0 +1,51 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+:root {
+  font-family: "Inter", system-ui, sans-serif;
+  color: #1c1c1a;
+  background: #f3f0e8;
+  font-synthesis: none;
+  --cream: #f3f0e8;
+  --surface: #f8f6f0;
+  --surface-muted: #ece8de;
+  --text: #1c1c1a;
+  --text-muted: #69665f;
+  --border: #252521;
+  --border-muted: #aaa69b;
+  --accent: #a8b7a1;
+  --success: #56745f;
+  --warning: #9d7745;
+  --danger: #985d56;
+  --reader-dark: #171715;
+  --reader-dark-surface: #201f1c;
+  --reader-dark-text: #ece9e1;
+  --focus: #365b42;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--cream); }
+button, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+::selection { background: var(--accent); color: var(--text); }
+
+.font-editorial { font-family: "Cormorant Garamond", Georgia, serif; }
+.text-balance { text-wrap: balance; }
+.page-enter { animation: page-enter 240ms ease-out; }
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
