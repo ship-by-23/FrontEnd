@@ -1,16 +1,42 @@
 # SimpanDulu Frontend
 
-Frontend React untuk aplikasi read-it-later privat SimpanDulu.
+Frontend React untuk SimpanDulu, aplikasi read-it-later privat. Pengguna dapat menyimpan URL, membaca artikel di satu tempat, lalu menemukannya kembali lewat library, tag, dan pencarian.
 
-## Menjalankan
+## Menjalankan secara lokal
 
-1. Salin `.env.example` menjadi `.env` dan sesuaikan `VITE_API_URL`.
-2. Jalankan `npm install`.
-3. Jalankan `npm run dev`.
+1. Salin `.env.example` menjadi `.env`.
+2. Pastikan `VITE_API_URL` menunjuk ke API yang sedang berjalan.
+3. Install dependency dan jalankan development server:
 
-Runtime tidak menggunakan data dummy. Jika API kosong, UI menampilkan empty state; jika API tidak tersedia, UI menampilkan error yang dapat dipulihkan.
+```bash
+npm install
+npm run dev
+```
 
-## Kontrak backend yang digunakan
+Buka alamat yang ditampilkan Vite, biasanya `http://localhost:5173`.
+
+## Perintah yang tersedia
+
+```bash
+npm run build   # type-check dan build production
+npm run lint    # cek lint
+npm test        # jalankan test sekali
+```
+
+## Route utama
+
+- `/` — landing page
+- `/login` dan `/register` — autentikasi
+- `/library` — daftar artikel
+- `/articles/new` — simpan artikel
+- `/articles/:articleId` — reader
+- `/search` — pencarian
+- `/tags` — tag
+- `/settings/profile`, `/settings/appearance`, `/settings/security`, `/settings/bookmarklet` — pengaturan
+
+## API
+
+Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`). Frontend memakai endpoint berikut:
 
 - `GET /me`
 - `POST /auth/register`
@@ -22,4 +48,6 @@ Runtime tidak menggunakan data dummy. Jika API kosong, UI menampilkan empty stat
 - `GET /articles/:articleId`
 - `GET /tags`
 
-Refresh session diasumsikan melalui cookie HTTP-only dengan `credentials: include`. Detail payload sengaja dibatasi pada field yang dipakai UI hingga kontrak backend final tersedia.
+Refresh session menggunakan cookie HTTP-only dengan `credentials: include`.
+
+Runtime tidak memakai data dummy. Saat database kosong, halaman menampilkan empty state; saat API bermasalah, pengguna mendapat pesan error dan opsi untuk mencoba lagi.
