@@ -4,39 +4,83 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Field, Input } from "../components/ui/form-controls";
+import { PasswordField } from "../components/ui/password-field";
 import { useAuth } from "../features/auth/auth-context";
-import { ApiError, apiRequest } from "../lib/api/client";
+import { loginUser, registerUser } from "../features/auth/auth-api";
+import { getAuthErrorMessage, getAuthNotice, getSafeDestination, validateAuthForm, type AuthField, type AuthFormErrors, type AuthFormFields } from "../features/auth/auth-utils";
+import { ApiError } from "../lib/api/client";
 
 type AuthPageProps = { mode: "login" | "register" };
-
-// Memastikan tujuan setelah login tetap internal dan tidak menjadi open redirect.
-function getSafeDestination(state: unknown) {
-  if (typeof state === "object" && state && "from" in state && typeof state.from === "string" && state.from.startsWith("/")) return state.from;
-  return "/library";
-}
 
 export function AuthPage({ mode }: AuthPageProps) {
   const isRegister = mode === "register";
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [fields, setFields] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [fields, setFields] = useState<AuthFormFields>({ name: "", email: "", password: "", confirmPassword: "" });
+  const [clientErrors, setClientErrors] = useState<AuthFormErrors>({});
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const destination = getSafeDestination(location.state);
 
   const mutation = useMutation({
-    mutationFn: () => apiRequest(`/auth/${mode}`, { method: "POST", retryUnauthorized: false, body: JSON.stringify(isRegister ? fields : { email: fields.email, password: fields.password }) }),
+    mutationFn: () => isRegister ? registerUser({
+        name: fields.name.trim(),
+        email: fields.email.trim(),
+        password: fields.password,
+        confirmPassword: fields.confirmPassword,
+      }) : loginUser({
+        email: fields.email.trim(),
+        password: fields.password,
+      }),
     onSuccess: async () => {
-      await auth.refresh();
-      navigate(getSafeDestination(location.state), { replace: true });
+      setSessionError(null);
+      const sessionResult = await auth.refresh();
+      if (sessionResult === "authenticated") {
+        navigate(destination, { replace: true });
+        return;
+      }
+      if (isRegister) {
+        navigate("/login", {
+          replace: true,
+          state: { from: destination, notice: "Akun berhasil dibuat. Silakan masuk untuk melanjutkan." },
+        });
+        return;
+      }
+      setSessionError("Login berhasil diproses, tetapi sesi belum dapat diverifikasi. Coba lagi.");
     },
   });
 
-  if (auth.status === "authenticated") return <Navigate to="/library" replace />;
+  if (auth.status === "authenticated") return <Navigate to={destination} replace />;
   const apiError = mutation.error instanceof ApiError ? mutation.error : null;
+  const serverErrors = apiError?.fields ?? {};
+  const notice = getAuthNotice(location.state);
+  const formError = sessionError ?? (mutation.error ? getAuthErrorMessage(mutation.error, mode) : null);
+
+  // Memperbarui satu field dan menghapus error lokal yang sudah diperbaiki user.
+  function updateField(field: AuthField, value: string) {
+    setFields((current) => ({ ...current, [field]: value }));
+    mutation.reset();
+    setClientErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+    setSessionError(null);
+  }
+
+  // Memilih error lokal terlebih dahulu lalu menggunakan field error dari API sebagai fallback.
+  function getFieldError(field: AuthField) {
+    return clientErrors[field] ?? serverErrors[field];
+  }
 
   // Memvalidasi konfirmasi password sebelum request dikirim.
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isRegister && fields.password !== fields.confirmPassword) return;
+    const errors = validateAuthForm(fields, mode);
+    setClientErrors(errors);
+    setSessionError(null);
+    if (Object.keys(errors).length > 0) return;
     mutation.mutate();
   }
 
@@ -52,13 +96,14 @@ export function AuthPage({ mode }: AuthPageProps) {
           <Link to="/" className="mb-12 inline-flex items-center gap-2 text-sm font-semibold"><ArrowLeft className="size-4" aria-hidden="true" />Kembali</Link>
           <h1 className="font-editorial text-5xl font-semibold">{isRegister ? "Buat akun" : "Selamat datang kembali"}</h1>
           <p className="mt-3 text-[var(--text-muted)]">{isRegister ? "Mulai susun pustaka bacaan pribadimu." : "Masuk untuk melanjutkan bacaanmu."}</p>
-          <form className="mt-8 grid gap-5" onSubmit={handleSubmit} noValidate>
-            {isRegister ? <Field label="Nama" htmlFor="name" error={apiError?.fields?.name}><Input id="name" autoComplete="name" required value={fields.name} onChange={(event) => setFields({ ...fields, name: event.target.value })} /></Field> : null}
-            <Field label="Email" htmlFor="email" error={apiError?.fields?.email}><Input id="email" type="email" autoComplete="email" required value={fields.email} onChange={(event) => setFields({ ...fields, email: event.target.value })} /></Field>
-            <Field label="Password" htmlFor="password" error={apiError?.fields?.password}><Input id="password" type="password" autoComplete={isRegister ? "new-password" : "current-password"} minLength={8} required value={fields.password} onChange={(event) => setFields({ ...fields, password: event.target.value })} /></Field>
-            {isRegister ? <Field label="Konfirmasi password" htmlFor="confirmPassword" error={fields.confirmPassword && fields.password !== fields.confirmPassword ? "Konfirmasi password belum sama." : undefined}><Input id="confirmPassword" type="password" autoComplete="new-password" required value={fields.confirmPassword} onChange={(event) => setFields({ ...fields, confirmPassword: event.target.value })} /></Field> : null}
-            {mutation.isError ? <p role="alert" className="border-l-2 border-[var(--danger)] pl-3 text-sm text-[var(--danger)]">{apiError?.message ?? "Tidak dapat terhubung ke server. Coba lagi."}</p> : null}
-            <Button type="submit" disabled={mutation.isPending || Boolean(isRegister && fields.confirmPassword && fields.password !== fields.confirmPassword)}>{mutation.isPending ? "Memproses…" : isRegister ? "Buat akun" : "Masuk"}</Button>
+          {notice ? <p className="border-l-2 border-[var(--success)] pl-3 text-sm text-[var(--success)]" role="status">{notice}</p> : null}
+          <form className="mt-8 grid gap-5" onSubmit={handleSubmit} noValidate aria-busy={mutation.isPending}>
+            {isRegister ? <Field label="Nama" htmlFor="name" error={getFieldError("name")}><Input id="name" name="name" autoComplete="name" required value={fields.name} aria-invalid={Boolean(getFieldError("name"))} aria-describedby={getFieldError("name") ? "name-error" : undefined} onChange={(event) => updateField("name", event.target.value)} /></Field> : null}
+            <Field label="Email" htmlFor="email" error={getFieldError("email")}><Input id="email" name="email" type="email" autoComplete="email" required value={fields.email} aria-invalid={Boolean(getFieldError("email"))} aria-describedby={getFieldError("email") ? "email-error" : undefined} onChange={(event) => updateField("email", event.target.value)} /></Field>
+            <Field label="Password" htmlFor="password" error={getFieldError("password")}><PasswordField id="password" name="password" autoComplete={isRegister ? "new-password" : "current-password"} required value={fields.password} aria-invalid={Boolean(getFieldError("password"))} aria-describedby={getFieldError("password") ? "password-error" : undefined} onChange={(event) => updateField("password", event.target.value)} /></Field>
+            {isRegister ? <Field label="Konfirmasi password" htmlFor="confirmPassword" error={getFieldError("confirmPassword")}><PasswordField id="confirmPassword" name="confirmPassword" autoComplete="new-password" required value={fields.confirmPassword} aria-invalid={Boolean(getFieldError("confirmPassword"))} aria-describedby={getFieldError("confirmPassword") ? "confirmPassword-error" : undefined} onChange={(event) => updateField("confirmPassword", event.target.value)} /></Field> : null}
+            {formError ? <p role="alert" aria-live="assertive" className="border-l-2 border-[var(--danger)] pl-3 text-sm text-[var(--danger)]">{formError}</p> : null}
+            <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? "Memproses…" : isRegister ? "Buat akun" : "Masuk"}</Button>
           </form>
           <p className="mt-6 text-sm text-[var(--text-muted)]">{isRegister ? "Sudah punya akun?" : "Belum punya akun?"} <Link className="font-semibold text-[var(--text)] underline underline-offset-4" to={isRegister ? "/login" : "/register"}>{isRegister ? "Masuk" : "Daftar"}</Link></p>
         </div>

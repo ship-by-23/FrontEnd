@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes, type SelectHTMLAttributes } from "react";
+import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 import { cn } from "../../lib/utils";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
@@ -42,13 +42,13 @@ export function Field({
   label: string;
   htmlFor: string;
   error?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="grid gap-2">
       <label className="text-sm font-semibold" htmlFor={htmlFor}>{label}</label>
       {children}
-      {error ? <p className="text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
+      {error ? <p id={`${htmlFor}-error`} className="text-sm text-[var(--danger)]" role="alert">{error}</p> : null}
     </div>
   );
 }
