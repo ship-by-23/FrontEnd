@@ -15,12 +15,12 @@ import { getExtractionErrorMessage, getExtractionStatusLabel, isExtractionPendin
 import {
   ArticleMetadata,
   ProgressSaveStatus,
-  ReaderBody,
   ReaderErrorState,
   ReaderHeader,
   ReaderSkeleton,
   ReadingProgressBar,
 } from "../features/reader/reader-components";
+import { ReaderHighlights } from "../features/highlights/reader-highlights";
 import {
   calculateReadingProgress,
   clampReadingProgress,
@@ -303,7 +303,7 @@ export function ReaderPage() {
         </div>
         {finishMutation.error ? <p className="mt-3 border-l-2 border-[var(--danger)] pl-3 text-sm text-[var(--danger)]" role="alert">{getReaderErrorMessage(finishMutation.error)}</p> : null}
         <ArticleMetadata article={article} />
-        <ReaderBody contentHtml={article.contentHtml} dark={dark} bodyRef={readerBodyRef} />
+        <ReaderHighlights article={article} dark={dark} bodyRef={readerBodyRef} />
       </div>
     </div>
   );

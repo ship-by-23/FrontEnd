@@ -65,3 +65,23 @@ export type ArticleCollection = {
   data: ArticleSummary[];
   pagination: Pagination;
 };
+
+export type HighlightArticleReference = {
+  id: string;
+  title?: string | null;
+  siteName?: string | null;
+};
+
+export type Highlight = {
+  id: string;
+  articleId: string;
+  quote: string;
+  prefix?: string | null;
+  suffix?: string | null;
+  startOffset?: number | null;
+  endOffset?: number | null;
+  note?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+  article?: HighlightArticleReference | null;
+};
