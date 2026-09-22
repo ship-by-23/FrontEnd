@@ -1,18 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { EmptyState, ErrorState, LoadingState } from "../components/feedback/states";
-import { apiRequest } from "../lib/api/client";
-import type { Tag } from "../lib/api/types";
-
-type TagCollection = { data: Tag[] } | Tag[];
-
-export function TagsPage() {
-  const query = useQuery({ queryKey: ["tags"], queryFn: ({ signal }) => apiRequest<TagCollection>("/tags", { signal }) });
-  if (query.isPending) return <LoadingState label="Memuat tag…" />;
-  if (query.isError) return <ErrorState message={query.error instanceof Error ? query.error.message : "Tag tidak dapat dimuat."} onRetry={() => void query.refetch()} />;
-  const tags = Array.isArray(query.data) ? query.data : query.data.data;
-  return <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Organisasi</p><h1 className="font-editorial mt-1 text-5xl font-semibold">Tag</h1><div className="mt-8">{tags.length === 0 ? <EmptyState title="Belum ada tag" description="Tag yang kamu tambahkan ke artikel akan tampil di sini." /> : <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{tags.map((tag) => <li key={tag.id}><Link to={`/tags/${tag.id}`} className="block border border-[var(--border)] bg-[var(--surface)] p-5 font-semibold hover:bg-[var(--surface-muted)]">{tag.name}</Link></li>)}</ul>}</div></div>;
-}
 
 export function SettingsPage({ section }: { section: string }) {
   const content: Record<string, [string, string]> = {

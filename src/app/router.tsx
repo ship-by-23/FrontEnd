@@ -12,7 +12,8 @@ const LibraryPage = lazy(() => import("../pages/library-page").then((module) => 
 const ReaderPage = lazy(() => import("../pages/reader-page").then((module) => ({ default: module.ReaderPage })));
 const SaveArticlePage = lazy(() => import("../pages/save-article-page").then((module) => ({ default: module.SaveArticlePage })));
 const SearchPage = lazy(() => import("../pages/search-page").then((module) => ({ default: module.SearchPage })));
-const TagsPage = lazy(() => import("../pages/simple-pages").then((module) => ({ default: module.TagsPage })));
+const TagsPage = lazy(() => import("../pages/tags-page").then((module) => ({ default: module.TagsPage })));
+const TagDetailPage = lazy(() => import("../pages/tags-page").then((module) => ({ default: module.TagDetailPage })));
 const SettingsPage = lazy(() => import("../pages/simple-pages").then((module) => ({ default: module.SettingsPage })));
 const NotFoundPage = lazy(() => import("../pages/simple-pages").then((module) => ({ default: module.NotFoundPage })));
 
@@ -60,7 +61,7 @@ export const router = createBrowserRouter([
             { path: "/articles/:articleId", element: <LazyPage><ReaderPage /></LazyPage> },
             { path: "/search", element: <LazyPage><SearchPage /></LazyPage> },
             { path: "/tags", element: <LazyPage><TagsPage /></LazyPage> },
-            { path: "/tags/:tagId", element: <LazyPage><LibraryPage /></LazyPage> },
+            { path: "/tags/:tagId", element: <LazyPage><TagDetailPage /></LazyPage> },
             { path: "/settings/profile", element: <LazyPage><SettingsPage section="profile" /></LazyPage> },
             { path: "/settings/appearance", element: <LazyPage><SettingsPage section="appearance" /></LazyPage> },
             { path: "/settings/security", element: <LazyPage><SettingsPage section="security" /></LazyPage> },

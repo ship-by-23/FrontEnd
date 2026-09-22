@@ -10,6 +10,7 @@ import { getTags, unwrapTags } from "../features/articles/article-api";
 import { deleteArticle, getLibraryArticles, updateArticle, type ArticleUpdateInput } from "../features/library/library-api";
 import { ArticleGrid, ArticleList } from "../features/library/library-components";
 import { LibraryToolbar } from "../features/library/library-toolbar";
+import { attachArticleTag, detachArticleTag, type ArticleTagAction } from "../features/tags/tags-api";
 import {
   applyArticleUpdateToCollection,
   findTagName,
@@ -131,11 +132,23 @@ export function LibraryPage() {
     },
   });
 
+  const tagMutation = useMutation({
+    mutationFn: ({ articleId, tagId, action }: ArticleTagAction) => action === "attach" ? attachArticleTag(articleId, tagId) : detachArticleTag(articleId, tagId),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["articles"] });
+    },
+  });
+
   const tags = tagsQuery.data ? unwrapTags(tagsQuery.data) : [];
   const hasFilters = hasActiveLibraryFilters(state);
   const activeTagName = findTagName(tags, state.tagId);
   const pendingUpdateArticleId = updateMutation.variables?.articleId;
   const pendingDeleteArticleId = deleteMutation.variables;
+
+  // Menjalankan perubahan relasi tag dari quick action artikel dan mempertahankan error untuk picker.
+  async function handleTagChange(input: ArticleTagAction) {
+    return tagMutation.mutateAsync(input);
+  }
 
   // Menjaga input pencarian lokal mengikuti URL ketika user memakai back-forward browser.
   useEffect(() => {
@@ -283,8 +296,8 @@ export function LibraryPage() {
       ) : (
         <>
           {state.view === "grid"
-            ? <ArticleGrid articles={articlesQuery.data.data} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId)} onUpdate={handleArticleUpdate} onDelete={requestDelete} />
-            : <ArticleList articles={articlesQuery.data.data} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId)} onUpdate={handleArticleUpdate} onDelete={requestDelete} />}
+            ? <ArticleGrid articles={articlesQuery.data.data} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId || tagMutation.isPending)} onUpdate={handleArticleUpdate} onDelete={requestDelete} availableTags={tags} tagsLoading={tagsQuery.isPending} tagsError={tagsQuery.error} onTagChange={handleTagChange} />
+            : <ArticleList articles={articlesQuery.data.data} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId || tagMutation.isPending)} onUpdate={handleArticleUpdate} onDelete={requestDelete} availableTags={tags} tagsLoading={tagsQuery.isPending} tagsError={tagsQuery.error} onTagChange={handleTagChange} />}
           <LibraryPagination page={state.page} pagination={articlesQuery.data.pagination} onPageChange={changePage} />
         </>
       )}

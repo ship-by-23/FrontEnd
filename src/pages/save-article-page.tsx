@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, BookmarkPlus, CheckCircle2, LoaderCircle, RotateCcw, Tag as TagIcon } from "lucide-react";
+import { AlertTriangle, BookmarkPlus, CheckCircle2, LoaderCircle, RotateCcw } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Field, Input } from "../components/ui/form-controls";
 import { getTags, createArticle, getArticle, readArticleReference, retryArticle, unwrapArticle, unwrapTags, type CreateArticleInput } from "../features/articles/article-api";
+import { TagPicker } from "../features/tags/tags-components";
 import {
   EXTRACTION_POLL_INITIAL_DELAY_MS,
   EXTRACTION_POLL_MAX_DELAY_MS,
@@ -16,15 +17,7 @@ import {
   isRetryablePollingError,
   validateArticleUrl,
 } from "../features/articles/article-utils";
-import type { ExtractionStatus, Tag } from "../lib/api/types";
-
-type TagSelectorProps = {
-  tags: Tag[];
-  selectedTagIds: string[];
-  isLoading: boolean;
-  error: unknown;
-  onToggle: (tagId: string) => void;
-};
+import type { ExtractionStatus } from "../lib/api/types";
 
 type ExtractionStatusPanelProps = {
   status: ExtractionStatus | null;
@@ -36,34 +29,6 @@ type ExtractionStatusPanelProps = {
   onRetry: () => void;
   onResumePolling: () => void;
 };
-
-// Menampilkan pilihan tag yang tersedia tanpa mengisi database dengan tag contoh.
-function TagSelector({ tags, selectedTagIds, isLoading, error, onToggle }: TagSelectorProps) {
-  return (
-    <fieldset className="grid gap-3">
-      <legend className="flex items-center gap-2 text-sm font-semibold"><TagIcon className="size-4" aria-hidden="true" />Tag opsional</legend>
-      {isLoading ? <p className="text-sm text-[var(--text-muted)]" role="status">Memuat tag…</p> : null}
-      {!isLoading && error ? <p className="text-sm text-[var(--warning)]" role="status">Tag tidak dapat dimuat. Artikel tetap dapat disimpan tanpa tag.</p> : null}
-      {!isLoading && !error && tags.length === 0 ? <p className="text-sm text-[var(--text-muted)]">Belum ada tag. Artikel tetap dapat disimpan tanpa tag.</p> : null}
-      {!isLoading && !error && tags.length > 0 ? (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {tags.map((tag) => (
-            <label key={tag.id} className="flex min-h-11 items-center gap-3 border border-[var(--border-muted)] bg-[var(--surface)] px-3 py-2 text-sm hover:bg-[var(--surface-muted)]">
-              <input
-                type="checkbox"
-                value={tag.id}
-                checked={selectedTagIds.includes(tag.id)}
-                onChange={() => onToggle(tag.id)}
-                className="size-4 accent-[var(--text)]"
-              />
-              <span>{tag.name}</span>
-            </label>
-          ))}
-        </div>
-      ) : null}
-    </fieldset>
-  );
-}
 
 // Menjelaskan lifecycle extraction berdasarkan status backend tanpa membuat persentase atau langkah palsu.
 function ExtractionStatusPanel({
@@ -282,7 +247,15 @@ export function SaveArticlePage() {
               onChange={(event) => handleUrlChange(event.target.value)}
             />
           </Field>
-          <TagSelector tags={tagsQuery.data ? unwrapTags(tagsQuery.data) : []} selectedTagIds={selectedTagIds} isLoading={tagsQuery.isPending} error={tagsQuery.error} onToggle={toggleTag} />
+          <TagPicker
+            tags={tagsQuery.data ? unwrapTags(tagsQuery.data) : []}
+            selectedTagIds={selectedTagIds}
+            isLoading={tagsQuery.isPending}
+            error={tagsQuery.error}
+            disabled={createMutation.isPending || retryMutation.isPending}
+            label="Tag opsional"
+            onToggle={toggleTag}
+          />
         </div>
 
         {formError ? <p className="mt-5 border-l-2 border-[var(--danger)] pl-3 text-sm leading-6 text-[var(--danger)]" role="alert">{formError}</p> : null}
