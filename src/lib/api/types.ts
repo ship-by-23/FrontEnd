@@ -27,7 +27,8 @@ export type ArticleSummary = {
   imageUrl?: string | null;
   estimatedReadingMinutes?: number | null;
   readingStatus: ReadingStatus;
-  readingProgress?: number;
+  readingProgress?: number | null;
+  readingAnchor?: string | null;
   isFavorite: boolean;
   isArchived: boolean;
   extractionStatus: ExtractionStatus;
@@ -41,7 +42,9 @@ export type Article = ArticleSummary & {
   canonicalUrl?: string | null;
   publishedAt?: string | null;
   contentHtml?: string | null;
+  contentText?: string | null;
   wordCount?: number | null;
+  finishedAt?: string | null;
 };
 
 export type Pagination = {
