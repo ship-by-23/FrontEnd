@@ -5,7 +5,7 @@ Frontend React untuk SimpanDulu, aplikasi read-it-later privat. Pengguna dapat m
 ## Menjalankan secara lokal
 
 1. Salin `.env.example` menjadi `.env`.
-2. Pastikan `VITE_API_URL` menunjuk ke API yang sedang berjalan.
+2. Pastikan `VITE_API_URL` menunjuk ke API development yang sedang berjalan.
 3. Install dependency dan jalankan development server:
 
 ```bash
@@ -19,6 +19,7 @@ Buka alamat yang ditampilkan Vite, biasanya `http://localhost:5173`.
 
 ```bash
 npm run build   # type-check dan build production
+npm run typecheck # type-check tanpa membuat bundle
 npm run lint    # cek lint
 npm test        # jalankan test sekali
 ```
@@ -39,7 +40,7 @@ npm test        # jalankan test sekali
 
 ## API
 
-Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`). Frontend memakai endpoint berikut:
+Pada development, base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`). URL wajib memakai prefix `/api/v1`. Pada production, base URL dibaca dari `/runtime-config.js` yang dibuat container saat startup sehingga artifact staging dan production dapat sama.
 
 - `GET /me`
 - `PATCH /me`
@@ -67,6 +68,8 @@ Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`).
 - `PATCH /highlights/:highlightId`
 - `DELETE /highlights/:highlightId`
 
+Route `/search` menggunakan `GET /articles` yang sama dengan Library, dengan parameter `query` dan filter yang sama. Tidak ada endpoint frontend terpisah yang dibuat hanya untuk layar Search.
+
 Refresh session menggunakan cookie HTTP-only dengan `credentials: include`.
 
 Save Article melakukan validasi URL dasar di browser, mengirim tag opsional jika dipilih, lalu memantau `pending`, `processing`, `completed`, atau `failed` dengan bounded polling. Progress extraction tidak dibuat di frontend.
@@ -75,11 +78,15 @@ Runtime tidak memakai data dummy. Saat database kosong, halaman menampilkan empt
 
 ## Production container
 
-Build image dengan API URL yang sesuai environment:
+Build image sekali, lalu berikan API URL saat container dijalankan:
 
 ```bash
-docker build --build-arg VITE_API_URL=https://api.example.com/api/v1 -t simpandulu-frontend .
-docker run --rm -p 8080:80 simpandulu-frontend
+docker build -t simpandulu-frontend .
+docker run --rm -p 8080:80 \
+  -e API_URL=https://api.example.com/api/v1 \
+  -e APP_ENV=production \
+  -e APP_VERSION=$(git rev-parse --short HEAD) \
+  simpandulu-frontend
 ```
 
-`nginx.conf` mengaktifkan SPA fallback, header keamanan dasar, dan CSP. Ganti origin `https://api.example.com` pada `connect-src` dengan origin API production yang sebenarnya sebelum deployment.
+Container akan gagal start jika `API_URL` kosong, bukan menggunakan fallback diam-diam. `nginx.conf` mengaktifkan SPA fallback, header keamanan dasar, dan CSP `connect-src` yang dibuat dari origin API saat startup.

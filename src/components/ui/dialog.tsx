@@ -50,6 +50,7 @@ export function Dialog({ open, title, description, titleId, onClose, children, s
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
+      aria-describedby={description ? `${titleId}-description` : undefined}
       className={[
         "m-auto max-h-[min(86vh,48rem)] w-[calc(100%-2rem)] overflow-y-auto border border-[var(--border)] bg-[var(--surface)] p-0 text-[var(--text)] shadow-[0.5rem_0.5rem_0_var(--accent)] backdrop:bg-black/45",
         size === "wide" ? "max-w-3xl" : "max-w-lg",
@@ -59,7 +60,7 @@ export function Dialog({ open, title, description, titleId, onClose, children, s
     >
       <div className="p-5 sm:p-7">
         <h2 id={titleId} className="font-editorial text-3xl font-semibold">{title}</h2>
-        {description ? <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{description}</p> : null}
+        {description ? <p id={`${titleId}-description`} className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{description}</p> : null}
         <div className="mt-6">{children}</div>
       </div>
     </dialog>

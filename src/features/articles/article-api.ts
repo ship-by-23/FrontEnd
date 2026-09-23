@@ -1,4 +1,5 @@
 import { apiRequest } from "../../lib/api/client";
+import { parseArticleResponse } from "../../lib/api/contracts";
 import type { Article, ExtractionStatus, ReadingStatus, Tag } from "../../lib/api/types";
 import { getTags as getTagsFromTagsApi, unwrapTags as unwrapTagsResponse, type TagCollection as TagsApiCollection } from "../tags/tags-api";
 
@@ -37,7 +38,7 @@ export function createArticle(input: CreateArticleInput) {
 
 // Mengambil detail artikel untuk memantau lifecycle extraction dari sumber backend.
 export function getArticle(articleId: string, signal?: AbortSignal) {
-  return apiRequest<ArticleResponse>(`/articles/${encodeURIComponent(articleId)}`, { signal });
+  return apiRequest<unknown>(`/articles/${encodeURIComponent(articleId)}`, { signal }).then(parseArticleResponse);
 }
 
 // Menyimpan progress baca dan anchor melalui endpoint yang sudah ditetapkan PRD.

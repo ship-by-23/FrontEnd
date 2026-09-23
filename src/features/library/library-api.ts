@@ -1,5 +1,6 @@
 import { apiRequest } from "../../lib/api/client";
-import type { ArticleCollection, ArticleSummary, ReadingStatus } from "../../lib/api/types";
+import { parseArticleCollection } from "../../lib/api/contracts";
+import type { ArticleSummary, ReadingStatus } from "../../lib/api/types";
 
 export type LibraryApiParams = {
   page: number;
@@ -33,7 +34,7 @@ function toArticleQuery(params: LibraryApiParams) {
 
 // Mengambil ringkasan artikel terpaginasikan untuk satu kombinasi filter Library.
 export function getLibraryArticles(params: LibraryApiParams, signal?: AbortSignal) {
-  return apiRequest<ArticleCollection>("/articles?" + toArticleQuery(params).toString(), { signal });
+  return apiRequest<unknown>("/articles?" + toArticleQuery(params).toString(), { signal }).then(parseArticleCollection);
 }
 
 // Memperbarui field artikel yang memang dikontrol user tanpa membuat endpoint frontend baru.

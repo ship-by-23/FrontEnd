@@ -13,7 +13,9 @@ if (!root) {
 let application: React.ReactNode;
 
 try {
-  getAppConfig();
+  const appConfig = getAppConfig();
+  document.documentElement.dataset.appEnv = appConfig.appEnv ?? "unknown";
+  document.documentElement.dataset.appVersion = appConfig.appVersion ?? "unknown";
   application = (
     <StrictMode>
       <App />

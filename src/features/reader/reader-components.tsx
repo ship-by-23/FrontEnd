@@ -1,5 +1,5 @@
 import { ArrowLeft, Check, ExternalLink, Moon, Pencil, SlidersHorizontal, Sun } from "lucide-react";
-import { useEffect, type RefObject } from "react";
+import { useEffect, useMemo, type RefObject } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, ErrorState } from "../../components/feedback/states";
 import { Button } from "../../components/ui/button";
@@ -7,6 +7,7 @@ import type { Article, Highlight } from "../../lib/api/types";
 import { cn, formatDate } from "../../lib/utils";
 import { READER_FONT_CLASSES, READER_TEXT_SIZE_CLASSES, type ReaderFont, type ReaderTextSize } from "../appearance/appearance-utils";
 import { applyHighlightMarks, clearHighlightMarks } from "../highlights/highlight-dom-utils";
+import { sanitizeArticleHtml } from "./article-html-sanitizer";
 import { getSafeReaderSourceUrl, type ReaderTheme } from "./reader-utils";
 
 type ReaderHeaderProps = {
@@ -162,12 +163,14 @@ type ReaderBodyProps = {
 
 // Merender hanya HTML yang dijamin sudah disanitasi oleh backend pada contract artikel.
 export function ReaderBody({ contentHtml, dark, readerFont, textSize, bodyRef, highlights = [], onHighlightClick }: ReaderBodyProps) {
+  const sanitizedContentHtml = useMemo(() => sanitizeArticleHtml(contentHtml), [contentHtml]);
+
   useEffect(() => {
     const body = bodyRef.current;
-    if (!body || !contentHtml?.trim()) return;
+    if (!body || !sanitizedContentHtml) return;
     applyHighlightMarks(body, highlights);
     return () => clearHighlightMarks(body);
-  }, [bodyRef, contentHtml, highlights]);
+  }, [bodyRef, highlights, sanitizedContentHtml]);
 
   // Membuka editor note ketika user mengklik mark yang sudah tersimpan di Reader.
   function handleBodyClick(event: React.MouseEvent<HTMLElement>) {
@@ -179,7 +182,7 @@ export function ReaderBody({ contentHtml, dark, readerFont, textSize, bodyRef, h
     if (highlightId) onHighlightClick(highlightId);
   }
 
-  if (!contentHtml?.trim()) {
+  if (!sanitizedContentHtml) {
     return <EmptyState title="Konten belum tersedia" description="Artikel sudah tercatat, tetapi konten bersih belum tersedia untuk dibaca." />;
   }
 
@@ -188,7 +191,7 @@ export function ReaderBody({ contentHtml, dark, readerFont, textSize, bodyRef, h
       ref={bodyRef}
       onClick={handleBodyClick}
       className={cn("prose mt-10 max-w-none leading-8", READER_FONT_CLASSES[readerFont], READER_TEXT_SIZE_CLASSES[textSize], dark && "prose-invert")}
-      dangerouslySetInnerHTML={{ __html: contentHtml }}
+      dangerouslySetInnerHTML={{ __html: sanitizedContentHtml }}
     />
   );
 }
