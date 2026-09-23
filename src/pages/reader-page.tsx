@@ -52,6 +52,7 @@ export function ReaderPage() {
   const pendingProgressRef = useRef<ReadingProgressInput | null>(null);
   const progressTimerRef = useRef<number | null>(null);
   const progressInFlightRef = useRef<Promise<void> | null>(null);
+  const finishRequestStartedRef = useRef(false);
   const lastProgressPersistedAtRef = useRef(0);
   const currentAnchorRef = useRef<string | null>(null);
   const isRestoringRef = useRef(false);
@@ -108,8 +109,9 @@ export function ReaderPage() {
 
   const finishMutation = useMutation({
     mutationFn: () => markArticleFinished(articleId),
-    onSuccess: async () => {
+    onSuccess: async (updatedArticle) => {
       setVisualProgress(100);
+      queryClient.setQueryData(["article", articleId], updatedArticle);
       await queryClient.invalidateQueries({ queryKey: ["article", articleId] });
       await queryClient.invalidateQueries({ queryKey: ["articles"] });
       toast.success("Artikel ditandai selesai.");
@@ -247,15 +249,22 @@ export function ReaderPage() {
 
   // Menunggu progress terakhir lalu mengirim mutation mark finished tanpa membiarkan queue lama menimpa progress 100.
   async function handleMarkFinished() {
-    if (finishMutation.isPending || !articleId) return;
-    await flushProgressNow();
-    if (pendingProgressRef.current) await flushProgressNow();
-    pendingProgressRef.current = null;
-    if (progressTimerRef.current !== null) {
-      window.clearTimeout(progressTimerRef.current);
-      progressTimerRef.current = null;
+    if (finishRequestStartedRef.current || !articleId) return;
+    finishRequestStartedRef.current = true;
+    try {
+      await flushProgressNow();
+      if (pendingProgressRef.current) await flushProgressNow();
+      pendingProgressRef.current = null;
+      if (progressTimerRef.current !== null) {
+        window.clearTimeout(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+      await finishMutation.mutateAsync();
+    } catch {
+      // Error mutation tetap ditampilkan oleh state React Query di bawah header.
+    } finally {
+      finishRequestStartedRef.current = false;
     }
-    finishMutation.mutate();
   }
 
   useEffect(() => {
@@ -375,11 +384,11 @@ export function ReaderPage() {
       dark ? "bg-[var(--reader-dark)] text-[var(--reader-dark-text)]" : "bg-[var(--surface)] text-[var(--text)]",
     )}>
       <ReadingProgressBar progress={visualProgress} dark={dark} />
-      <div ref={readerContentRef} className="mx-auto max-w-3xl">
+      <div ref={readerContentRef} className="mx-auto mt-6 max-w-3xl">
         <ReaderHeader
           dark={dark}
           isFinished={article.readingStatus === "finished"}
-          isMarkingFinished={finishMutation.isPending || progressSaveState === "saving"}
+          isMarkingFinished={finishMutation.isPending}
           onMarkFinished={() => void handleMarkFinished()}
         />
         <div className="mt-3 flex min-h-5 justify-end">

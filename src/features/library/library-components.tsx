@@ -85,9 +85,22 @@ function ReadingProgress({ article }: { article: ArticleSummary }) {
 
   const progress = Math.min(100, Math.max(0, Math.round(article.readingProgress)));
   return (
-    <span className="text-xs text-[var(--text-muted)]" aria-label={"Progress baca " + progress + " persen"}>
-      {progress}% dibaca
-    </span>
+    <div className="basis-full" aria-label={"Progress baca " + progress + " persen"}>
+      <span className="text-xs text-[var(--text-muted)]">{progress}% dibaca</span>
+      <div
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]"
+        role="progressbar"
+        aria-label="Progress membaca"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress}
+      >
+        <span
+          className="block h-full rounded-full bg-[var(--success)] transition-[width] duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
   );
 }
 
