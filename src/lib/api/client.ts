@@ -1,5 +1,5 @@
 import { getAppConfig } from "../config";
-import type { ApiErrorPayload } from "./types";
+import type { ApiErrorPayload, AuthSessionResponse } from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -14,6 +14,12 @@ export class ApiError extends Error {
 }
 
 let refreshRequest: Promise<boolean> | null = null;
+let accessToken: string | null = null;
+
+// Menyimpan access token hanya di memory browser; refresh token tetap dikelola oleh cookie HTTP-only backend.
+export function setAccessToken(token: string | null) {
+  accessToken = token;
+}
 
 // Membaca body JSON jika tersedia tanpa menutupi status HTTP asli.
 async function readJson(response: Response): Promise<unknown> {
@@ -42,7 +48,14 @@ async function refreshSession() {
       credentials: "include",
       headers: { Accept: "application/json" },
     })
-      .then((response) => response.ok)
+      .then(async (response) => {
+        if (!response.ok) return false;
+        const payload = (await readJson(response)) as AuthSessionResponse | undefined;
+        const nextToken = payload?.data?.accessToken;
+        if (!nextToken) return false;
+        setAccessToken(nextToken);
+        return true;
+      })
       .catch(() => false)
       .finally(() => {
         refreshRequest = null;
@@ -58,6 +71,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const { apiUrl } = getAppConfig();
   const headers = new Headers(options.headers);
   headers.set("Accept", "application/json");
+  if (accessToken && !headers.has("Authorization")) headers.set("Authorization", `Bearer ${accessToken}`);
   if (options.body && !(options.body instanceof FormData)) headers.set("Content-Type", "application/json");
 
   const response = await fetch(`${apiUrl}${path}`, {

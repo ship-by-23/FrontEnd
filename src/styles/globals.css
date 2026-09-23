@@ -3,9 +3,10 @@
 @plugin "@tailwindcss/typography";
 
 :root {
+  color-scheme: light;
   font-family: "Inter", system-ui, sans-serif;
-  color: #1c1c1a;
-  background: #f3f0e8;
+  color: var(--text);
+  background: var(--cream);
   font-synthesis: none;
   --cream: #f3f0e8;
   --surface: #f8f6f0;
@@ -21,12 +22,33 @@
   --reader-dark: #171715;
   --reader-dark-surface: #201f1c;
   --reader-dark-text: #ece9e1;
+  --reader-surface: #f8f6f0;
   --focus: #365b42;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --cream: #191816;
+  --surface: #23211d;
+  --surface-muted: #302d27;
+  --text: #eee9df;
+  --text-muted: #b8b0a4;
+  --border: #ded4c4;
+  --border-muted: #766e62;
+  --accent: #a8b7a1;
+  --success: #9dbc9f;
+  --warning: #d2a56d;
+  --danger: #df9389;
+  --reader-dark: #11110f;
+  --reader-dark-surface: #1b1a17;
+  --reader-dark-text: #f1ece3;
+  --reader-surface: #201e1a;
+  --focus: #b8d7bf;
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--cream); }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--cream); color: var(--text); transition: background-color 180ms ease, color 180ms ease; }
 button, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
@@ -35,6 +57,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .font-editorial { font-family: "Cormorant Garamond", Georgia, serif; }
 .text-balance { text-wrap: balance; }
 .page-enter { animation: page-enter 240ms ease-out; }
+.auth-visual-image {
+  filter: brightness(0.62) saturate(0.72) contrast(0.98);
+  object-position: center;
+}
+.auth-visual-overlay {
+  background: linear-gradient(180deg, rgba(28, 28, 26, 0.2) 0%, rgba(28, 28, 26, 0.36) 100%);
+}
 
 @keyframes page-enter {
   from { opacity: 0; transform: translateY(4px); }

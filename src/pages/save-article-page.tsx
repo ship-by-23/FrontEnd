@@ -5,9 +5,9 @@ import { useState, type FormEvent } from "react";
 import { Button } from "../components/ui/button";
 import { Field, Input } from "../components/ui/form-controls";
 import { ApiError, apiRequest } from "../lib/api/client";
-import type { Article } from "../lib/api/types";
+import type { ArticleSubmission } from "../lib/api/types";
 
-type ArticleResponse = Article | { data: Article };
+type ArticleResponse = ArticleSubmission | { data: ArticleSubmission };
 
 export function SaveArticlePage() {
   const [searchParams] = useSearchParams();

@@ -56,6 +56,7 @@ export const router = createBrowserRouter([
         { path: "/settings/appearance", element: <LazyPage><SettingsPage section="appearance" /></LazyPage> },
         { path: "/settings/security", element: <LazyPage><SettingsPage section="security" /></LazyPage> },
         { path: "/settings/bookmarklet", element: <LazyPage><SettingsPage section="bookmarklet" /></LazyPage> },
+        { path: "/settings/about", element: <LazyPage><SettingsPage section="about" /></LazyPage> },
       ],
     }],
   },

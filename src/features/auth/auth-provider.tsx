@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { queryClient } from "../../app/query-client";
-import { ApiError, apiRequest } from "../../lib/api/client";
+import { ApiError, apiRequest, setAccessToken } from "../../lib/api/client";
 import type { User } from "../../lib/api/types";
 import { AuthContext, type AuthContextValue, type AuthState } from "./auth-context";
 
@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setState({ status: "authenticated", user: unwrapUser(response), error: null });
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
+        setAccessToken(null);
         setState({ status: "unauthenticated", user: null, error: null });
         return;
       }
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await apiRequest<void>("/auth/logout", { method: "POST", retryUnauthorized: false });
     } finally {
+      setAccessToken(null);
       queryClient.clear();
       setState({ status: "unauthenticated", user: null, error: null });
     }
