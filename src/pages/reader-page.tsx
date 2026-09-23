@@ -21,7 +21,7 @@ import {
   ReadingProgressBar,
 } from "../features/reader/reader-components";
 import { ReaderHighlights } from "../features/highlights/reader-highlights";
-import { useAppearance } from "../features/appearance/appearance-provider";
+import { useAppearance } from "../features/appearance/appearance-context";
 import {
   calculateReadingProgress,
   clampReadingProgress,

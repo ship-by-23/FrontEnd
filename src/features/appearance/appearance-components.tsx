@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
 import { SettingsNavigation } from "../settings/settings-navigation";
-import { useAppearance } from "./appearance-provider";
+import { useAppearance } from "./appearance-context";
 import {
   READER_FONT_CLASSES,
   READER_TEXT_SIZE_CLASSES,
