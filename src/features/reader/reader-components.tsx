@@ -46,15 +46,18 @@ type MarkFinishedButtonProps = {
 
 // Mengirim aksi selesai hanya sekali dan mempertahankan feedback yang dapat dipahami keyboard user.
 export function MarkFinishedButton({ dark, isFinished, isPending, onClick }: MarkFinishedButtonProps) {
+  if (isFinished) return null;
+
   return (
     <Button
-      variant={isFinished || dark ? "secondary" : "primary"}
-      disabled={isFinished || isPending}
+      variant={dark ? "secondary" : "primary"}
+      className="select-none [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+      disabled={isPending}
       onClick={onClick}
-      aria-label={isFinished ? "Artikel sudah selesai dibaca" : "Tandai artikel selesai dibaca"}
+      aria-label="Tandai artikel selesai dibaca"
     >
       <Check className="size-4" aria-hidden="true" />
-      {isFinished ? "Sudah selesai" : isPending ? "Menyimpan…" : "Tandai selesai"}
+      {isPending ? "Menyimpan…" : "Tandai selesai"}
     </Button>
   );
 }

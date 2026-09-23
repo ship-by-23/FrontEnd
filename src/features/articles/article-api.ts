@@ -22,7 +22,6 @@ export type ReadingProgressInput = {
 
 export type ArticleStatusUpdate = {
   readingStatus: ReadingStatus;
-  readingProgress?: number;
 };
 
 export type TagCollection = TagsApiCollection;
@@ -45,17 +44,20 @@ export function getArticle(articleId: string, signal?: AbortSignal) {
 export function saveReadingProgress(articleId: string, input: ReadingProgressInput) {
   return apiRequest<unknown>(`/articles/${encodeURIComponent(articleId)}/progress`, {
     method: "PUT",
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      progress: input.readingProgress,
+      ...(input.readingAnchor !== undefined ? { anchor: input.readingAnchor } : {}),
+    }),
   });
 }
 
 // Menandai artikel selesai dengan status dan progress akhir yang konsisten.
 export function markArticleFinished(articleId: string) {
-  const input: ArticleStatusUpdate = { readingStatus: "finished", readingProgress: 100 };
+  const input: ArticleStatusUpdate = { readingStatus: "finished" };
   return apiRequest<unknown>(`/articles/${encodeURIComponent(articleId)}`, {
     method: "PATCH",
     body: JSON.stringify(input),
-  });
+  }).then(parseArticleResponse);
 }
 
 // Mengulangi extraction artikel yang sebelumnya gagal secara idempotent di boundary API.
