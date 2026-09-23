@@ -139,7 +139,8 @@ export function LibraryPage() {
 
   // Menjaga input pencarian lokal mengikuti URL ketika user memakai back-forward browser.
   useEffect(() => {
-    setSearchValue(state.query);
+    const frameId = window.requestAnimationFrame(() => setSearchValue(state.query));
+    return () => window.cancelAnimationFrame(frameId);
   }, [state.query]);
 
   // Menunda perubahan query agar setiap karakter tidak langsung menghasilkan request full-text baru.

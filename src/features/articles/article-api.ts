@@ -1,5 +1,5 @@
 import { apiRequest } from "../../lib/api/client";
-import type { Article, ExtractionStatus, Tag } from "../../lib/api/types";
+import type { Article, ExtractionStatus, ReadingStatus, Tag } from "../../lib/api/types";
 
 export type ArticleResponse = Article | { data: Article };
 
@@ -11,6 +11,16 @@ export type CreateArticleInput = {
 export type ArticleReference = {
   articleId: string;
   extractionStatus?: ExtractionStatus;
+};
+
+export type ReadingProgressInput = {
+  readingProgress: number;
+  readingAnchor?: string | null;
+};
+
+export type ArticleStatusUpdate = {
+  readingStatus: ReadingStatus;
+  readingProgress?: number;
 };
 
 export type TagCollection = Tag[] | { data: Tag[] };
@@ -27,6 +37,23 @@ export function createArticle(input: CreateArticleInput) {
 // Mengambil detail artikel untuk memantau lifecycle extraction dari sumber backend.
 export function getArticle(articleId: string, signal?: AbortSignal) {
   return apiRequest<ArticleResponse>(`/articles/${encodeURIComponent(articleId)}`, { signal });
+}
+
+// Menyimpan progress baca dan anchor melalui endpoint yang sudah ditetapkan PRD.
+export function saveReadingProgress(articleId: string, input: ReadingProgressInput) {
+  return apiRequest<unknown>(`/articles/${encodeURIComponent(articleId)}/progress`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+// Menandai artikel selesai dengan status dan progress akhir yang konsisten.
+export function markArticleFinished(articleId: string) {
+  const input: ArticleStatusUpdate = { readingStatus: "finished", readingProgress: 100 };
+  return apiRequest<unknown>(`/articles/${encodeURIComponent(articleId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 // Mengulangi extraction artikel yang sebelumnya gagal secara idempotent di boundary API.

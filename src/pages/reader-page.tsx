@@ -1,40 +1,309 @@
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink, Moon, Sun } from "lucide-react";
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ErrorState, LoadingState } from "../components/feedback/states";
-import { Button } from "../components/ui/button";
-import { apiRequest } from "../lib/api/client";
-import type { Article } from "../lib/api/types";
-import { cn, formatDate } from "../lib/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useParams } from "react-router-dom";
+import { LoadingState } from "../components/feedback/states";
+import {
+  getArticle,
+  markArticleFinished,
+  retryArticle,
+  saveReadingProgress,
+  unwrapArticle,
+  type ReadingProgressInput,
+} from "../features/articles/article-api";
+import { getExtractionErrorMessage, getExtractionStatusLabel, isExtractionPending } from "../features/articles/article-utils";
+import {
+  ArticleMetadata,
+  ProgressSaveStatus,
+  ReaderBody,
+  ReaderErrorState,
+  ReaderHeader,
+  ReaderSkeleton,
+  ReadingProgressBar,
+} from "../features/reader/reader-components";
+import {
+  calculateReadingProgress,
+  clampReadingProgress,
+  findReaderAnchor,
+  findVisibleReaderAnchor,
+  getInitialReaderTheme,
+  getReaderErrorMessage,
+  getScrollPositionForProgress,
+  persistReaderTheme,
+  READER_PROGRESS_THROTTLE_MS,
+  type ReaderTheme,
+} from "../features/reader/reader-utils";
+import { cn } from "../lib/utils";
 
-type ArticleResponse = Article | { data: Article };
+type ProgressSaveState = "idle" | "saving" | "saved" | "error";
 
+// Menampilkan Reader dengan query detail, lifecycle extraction, theme lokal, dan progress persistence.
 export function ReaderPage() {
   const { articleId = "" } = useParams();
-  const [dark, setDark] = useState(() => localStorage.getItem("reader-theme") === "dark");
-  const query = useQuery({ queryKey: ["article", articleId], queryFn: ({ signal }) => apiRequest<ArticleResponse>(`/articles/${articleId}`, { signal }), refetchInterval: (state) => { const raw = state.state.data; const article = raw && ("data" in raw ? raw.data : raw); return article?.extractionStatus === "pending" || article?.extractionStatus === "processing" ? 2500 : false; } });
+  const queryClient = useQueryClient();
+  const [theme, setTheme] = useState<ReaderTheme>(() => getInitialReaderTheme());
+  const [visualProgress, setVisualProgress] = useState(0);
+  const [progressSaveState, setProgressSaveState] = useState<ProgressSaveState>("idle");
+  const readerContentRef = useRef<HTMLDivElement | null>(null);
+  const readerBodyRef = useRef<HTMLElement | null>(null);
+  const pendingProgressRef = useRef<ReadingProgressInput | null>(null);
+  const progressTimerRef = useRef<number | null>(null);
+  const progressInFlightRef = useRef<Promise<void> | null>(null);
+  const lastProgressPersistedAtRef = useRef(0);
+  const currentAnchorRef = useRef<string | null>(null);
+  const isRestoringRef = useRef(false);
+  const restoredArticleIdRef = useRef<string | null>(null);
+  const flushProgressRef = useRef<() => Promise<void>>(async () => undefined);
+  const flushProgressNowRef = useRef<() => Promise<void>>(async () => undefined);
+  const updateReadingProgressRef = useRef<() => void>(() => undefined);
 
-  // Mengubah tema reader yang sama tanpa membuat route atau artikel baru.
-  function toggleTheme() {
-    setDark((current) => {
-      localStorage.setItem("reader-theme", current ? "light" : "dark");
-      return !current;
+  const articleQuery = useQuery({
+    queryKey: ["article", articleId],
+    queryFn: ({ signal }) => getArticle(articleId, signal),
+    enabled: Boolean(articleId),
+    refetchInterval: (query) => {
+      const article = query.state.data ? unwrapArticle(query.state.data) : null;
+      return article && isExtractionPending(article.extractionStatus) ? 2_500 : false;
+    },
+  });
+
+  const finishMutation = useMutation({
+    mutationFn: () => markArticleFinished(articleId),
+    onSuccess: async () => {
+      setVisualProgress(100);
+      await queryClient.invalidateQueries({ queryKey: ["article", articleId] });
+      await queryClient.invalidateQueries({ queryKey: ["articles"] });
+      toast.success("Artikel ditandai selesai.");
+    },
+  });
+
+  const retryMutation = useMutation({
+    mutationFn: () => retryArticle(articleId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["article", articleId] });
+      toast.success("Ekstraksi dimulai lagi.");
+    },
+  });
+
+  const article = articleQuery.data ? unwrapArticle(articleQuery.data) : null;
+
+  // Mengirim progress terbaru setelah interval throttle atau ketika browser perlu melakukan flush.
+  async function flushProgress() {
+    const activeRequest = progressInFlightRef.current;
+    if (activeRequest) return activeRequest;
+
+    const snapshot = pendingProgressRef.current;
+    if (!articleId || !snapshot) return;
+
+    pendingProgressRef.current = null;
+    setProgressSaveState("saving");
+    const request = (async () => {
+      try {
+        await saveReadingProgress(articleId, snapshot);
+        lastProgressPersistedAtRef.current = Date.now();
+        setProgressSaveState("saved");
+      } catch {
+        pendingProgressRef.current = pendingProgressRef.current ?? snapshot;
+        setProgressSaveState("error");
+      } finally {
+        progressInFlightRef.current = null;
+        if (pendingProgressRef.current && progressTimerRef.current === null) {
+          progressTimerRef.current = window.setTimeout(() => {
+            progressTimerRef.current = null;
+            void flushProgressRef.current();
+          }, READER_PROGRESS_THROTTLE_MS);
+        }
+      }
+    })();
+
+    progressInFlightRef.current = request;
+    return request;
+  }
+
+  // Menjadwalkan hanya snapshot terakhir agar scroll event tidak menjadi request API per event.
+  function scheduleProgressSave(snapshot: ReadingProgressInput) {
+    pendingProgressRef.current = snapshot;
+    if (progressTimerRef.current !== null || progressInFlightRef.current) return;
+
+    const elapsed = Date.now() - lastProgressPersistedAtRef.current;
+    const delay = Math.max(0, READER_PROGRESS_THROTTLE_MS - elapsed);
+    progressTimerRef.current = window.setTimeout(() => {
+      progressTimerRef.current = null;
+      void flushProgressRef.current();
+    }, delay);
+  }
+
+  // Menghentikan timer lalu mengirim snapshot yang menunggu sebelum route atau visibility berubah.
+  function flushProgressNow() {
+    if (progressTimerRef.current !== null) {
+      window.clearTimeout(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    return flushProgress();
+  }
+
+  // Menghitung progress visual dan menyimpan anchor stabil bila HTML backend menyediakannya.
+  function updateReadingProgress() {
+    const container = readerContentRef.current;
+    if (!container || !readerBodyRef.current || article?.readingStatus === "finished") return;
+
+    const progress = calculateReadingProgress(container, window.scrollY, window.innerHeight);
+    setVisualProgress((current) => current === progress ? current : progress);
+    if (isRestoringRef.current) return;
+
+    const visibleAnchor = findVisibleReaderAnchor(readerBodyRef.current, window.innerHeight);
+    if (visibleAnchor) currentAnchorRef.current = visibleAnchor;
+    scheduleProgressSave({
+      readingProgress: progress,
+      readingAnchor: currentAnchorRef.current,
     });
   }
 
-  if (query.isPending) return <LoadingState label="Membuka artikel…" />;
-  if (query.isError) return <ErrorState message={query.error instanceof Error ? query.error.message : "Artikel tidak dapat dibuka."} onRetry={() => void query.refetch()} />;
-  const article = "data" in query.data ? query.data.data : query.data;
-  if (article.extractionStatus === "pending" || article.extractionStatus === "processing") return <div className="mx-auto max-w-2xl"><Link to="/library" className="inline-flex items-center gap-2 text-sm font-semibold"><ArrowLeft className="size-4" />Library</Link><LoadingState label="Artikel sedang dibersihkan. Halaman ini akan diperbarui otomatis…" /></div>;
-  if (article.extractionStatus === "failed") return <div className="mx-auto max-w-2xl"><ErrorState title="Ekstraksi artikel gagal" message={article.extractionErrorCode ? `Kode kegagalan: ${article.extractionErrorCode}` : "Konten artikel belum berhasil diambil."} /></div>;
+  useEffect(() => {
+    flushProgressRef.current = flushProgress;
+    flushProgressNowRef.current = flushProgressNow;
+    updateReadingProgressRef.current = updateReadingProgress;
+  });
 
+  // Mengubah theme Reader dan mempertahankannya di browser yang sedang digunakan.
+  function handleThemeChange(nextTheme: ReaderTheme) {
+    setTheme(nextTheme);
+    persistReaderTheme(nextTheme);
+  }
+
+  // Menunggu progress terakhir lalu mengirim mutation mark finished tanpa membiarkan queue lama menimpa progress 100.
+  async function handleMarkFinished() {
+    if (finishMutation.isPending || !articleId) return;
+    await flushProgressNow();
+    if (pendingProgressRef.current) await flushProgressNow();
+    pendingProgressRef.current = null;
+    if (progressTimerRef.current !== null) {
+      window.clearTimeout(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    finishMutation.mutate();
+  }
+
+  useEffect(() => {
+    if (!article || article.extractionStatus !== "completed" || restoredArticleIdRef.current === article.id) return;
+    const container = readerContentRef.current;
+    if (!container) return;
+
+    restoredArticleIdRef.current = article.id;
+    currentAnchorRef.current = article.readingAnchor ?? null;
+    setVisualProgress(clampReadingProgress(article.readingProgress ?? 0));
+
+    const frameId = window.requestAnimationFrame(() => {
+      const currentContainer = readerContentRef.current;
+      if (!currentContainer) return;
+
+      isRestoringRef.current = true;
+      const anchorElement = findReaderAnchor(readerBodyRef.current ?? currentContainer, article.readingAnchor);
+      if (anchorElement) {
+        anchorElement.scrollIntoView({ block: "start", behavior: "auto" });
+      } else if (article.readingProgress !== null && article.readingProgress !== undefined) {
+        window.scrollTo({
+          top: getScrollPositionForProgress(currentContainer, article.readingProgress, window.innerHeight, window.scrollY),
+          behavior: "auto",
+        });
+      }
+
+      window.requestAnimationFrame(() => {
+        isRestoringRef.current = false;
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [article]);
+
+  useEffect(() => {
+    if (!article || article.extractionStatus !== "completed") return;
+
+    let frameId: number | null = null;
+    const handleScrollOrResize = () => {
+      if (frameId !== null) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null;
+        updateReadingProgressRef.current();
+      });
+    };
+
+    handleScrollOrResize();
+    window.addEventListener("scroll", handleScrollOrResize, { passive: true });
+    window.addEventListener("resize", handleScrollOrResize);
+
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", handleScrollOrResize);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [article]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") void flushProgressNowRef.current();
+    };
+    const handlePageHide = () => {
+      void flushProgressNowRef.current();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+      void flushProgressNowRef.current();
+    };
+  }, []);
+
+  if (!articleId) return <ReaderErrorState message="ID artikel tidak valid." />;
+  if (articleQuery.isPending) {
+    return <div className="-m-4 min-h-[calc(100vh-4rem)] bg-[var(--surface)] p-4 sm:-m-6 sm:p-8 lg:-m-10 lg:p-12"><ReaderSkeleton /></div>;
+  }
+  if (articleQuery.isError) return <ReaderErrorState message={getReaderErrorMessage(articleQuery.error)} onRetry={() => void articleQuery.refetch()} />;
+  if (!article) return <ReaderErrorState message="Artikel tidak ditemukan atau respons server tidak lengkap." />;
+
+  if (isExtractionPending(article.extractionStatus)) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <LoadingState label={`${getExtractionStatusLabel(article.extractionStatus)}. Halaman akan diperbarui otomatis…`} />
+      </div>
+    );
+  }
+
+  if (article.extractionStatus === "failed") {
+    const retryError = retryMutation.error ? getReaderErrorMessage(retryMutation.error) : null;
+    return (
+      <ReaderErrorState
+        title="Ekstraksi artikel gagal"
+        message={retryError ?? getExtractionErrorMessage(article.extractionErrorCode)}
+        onRetry={retryMutation.isPending ? undefined : () => retryMutation.mutate()}
+      />
+    );
+  }
+
+  const dark = theme === "dark";
   return (
-    <div className={cn("-m-4 min-h-[calc(100vh-4rem)] p-4 transition-colors sm:-m-6 sm:p-8 lg:-m-10 lg:p-12", dark ? "bg-[var(--reader-dark)] text-[var(--reader-dark-text)]" : "bg-[var(--surface)] text-[var(--text)]")}>
-      <div className="mx-auto max-w-3xl">
-        <div className="flex items-center justify-between gap-4"><Link to="/library" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold"><ArrowLeft className="size-4" />Library</Link><Button variant={dark ? "secondary" : "ghost"} onClick={toggleTheme} aria-label={dark ? "Gunakan tema terang" : "Gunakan tema gelap"}>{dark ? <Sun className="size-4" /> : <Moon className="size-4" />}</Button></div>
-        <header className="border-b border-current/25 py-12"><p className="text-sm opacity-70">{article.siteName ?? "Artikel"} · {formatDate(article.publishedAt ?? article.createdAt)}</p><h1 className="font-editorial mt-4 text-balance text-5xl font-semibold leading-[1.05] sm:text-6xl">{article.title}</h1>{article.description ? <p className="mt-6 text-lg leading-8 opacity-75">{article.description}</p> : null}<div className="mt-6 flex flex-wrap gap-4 text-sm opacity-70">{article.author ? <span>{article.author}</span> : null}{article.estimatedReadingMinutes ? <span>{article.estimatedReadingMinutes} menit baca</span> : null}{article.canonicalUrl || article.submittedUrl ? <a className="inline-flex items-center gap-1 underline" href={article.canonicalUrl ?? article.submittedUrl} target="_blank" rel="noreferrer">Sumber asli <ExternalLink className="size-3" /></a> : null}</div></header>
-        {article.contentHtml ? <article className={cn("prose prose-lg mt-10 max-w-none font-serif leading-8", dark && "prose-invert")} dangerouslySetInnerHTML={{ __html: article.contentHtml }} /> : <p className="py-12 opacity-70">Konten bersih belum tersedia.</p>}
+    <div className={cn(
+      "-m-4 min-h-[calc(100vh-4rem)] p-4 transition-colors sm:-m-6 sm:p-8 lg:-m-10 lg:p-12",
+      dark ? "bg-[var(--reader-dark)] text-[var(--reader-dark-text)]" : "bg-[var(--surface)] text-[var(--text)]",
+    )}>
+      <ReadingProgressBar progress={visualProgress} dark={dark} />
+      <div ref={readerContentRef} className="mx-auto max-w-3xl">
+        <ReaderHeader
+          theme={theme}
+          dark={dark}
+          isFinished={article.readingStatus === "finished"}
+          isMarkingFinished={finishMutation.isPending || progressSaveState === "saving"}
+          onThemeChange={handleThemeChange}
+          onMarkFinished={() => void handleMarkFinished()}
+        />
+        <div className="mt-3 flex min-h-5 justify-end">
+          <ProgressSaveStatus state={progressSaveState} />
+        </div>
+        {finishMutation.error ? <p className="mt-3 border-l-2 border-[var(--danger)] pl-3 text-sm text-[var(--danger)]" role="alert">{getReaderErrorMessage(finishMutation.error)}</p> : null}
+        <ArticleMetadata article={article} />
+        <ReaderBody contentHtml={article.contentHtml} dark={dark} bodyRef={readerBodyRef} />
       </div>
     </div>
   );
