@@ -131,6 +131,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
   }
 }
 
+/* Pada desktop AppShell menjadi satu-satunya pemilik scroll agar dokumen tidak membentuk scrollbar kedua. */
+@media (min-width: 64rem) {
+  html, body, #root { height: 100%; overflow: hidden; }
+}
+
 @media (max-width: 639px) {
   .landing-illustration { min-height: 22rem; box-shadow: 0.65rem 0.65rem 0 var(--accent); }
   .landing-illustration-body { min-height: 19rem; grid-template-columns: 4rem 1fr; }
