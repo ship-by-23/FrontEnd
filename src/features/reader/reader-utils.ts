@@ -1,27 +1,12 @@
 import { ApiError } from "../../lib/api/client";
 
-export type ReaderTheme = "light" | "dark";
-
-export const READER_THEME_STORAGE_KEY = "reader-theme";
+export {
+  getInitialReaderTheme,
+  persistReaderTheme,
+  READER_THEME_STORAGE_KEY,
+  type ReaderTheme,
+} from "../appearance/appearance-utils";
 export const READER_PROGRESS_THROTTLE_MS = 1_500;
-
-// Membaca tema Reader dari browser tanpa membuat preference menjadi global untuk seluruh aplikasi.
-export function getInitialReaderTheme(): ReaderTheme {
-  try {
-    return window.localStorage.getItem(READER_THEME_STORAGE_KEY) === "dark" ? "dark" : "light";
-  } catch {
-    return "light";
-  }
-}
-
-// Menyimpan tema Reader pada browser sesuai keputusan produk yang belum mewajibkan sinkronisasi antardevice.
-export function persistReaderTheme(theme: ReaderTheme) {
-  try {
-    window.localStorage.setItem(READER_THEME_STORAGE_KEY, theme);
-  } catch {
-    // Browser dapat menolak storage; state lokal tetap menjadi sumber tampilan aktif.
-  }
-}
 
 // Membatasi progress ke rentang yang dapat dipahami progress bar dan backend.
 export function clampReadingProgress(value: number) {

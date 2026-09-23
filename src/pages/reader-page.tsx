@@ -21,17 +21,15 @@ import {
   ReadingProgressBar,
 } from "../features/reader/reader-components";
 import { ReaderHighlights } from "../features/highlights/reader-highlights";
+import { useAppearance } from "../features/appearance/appearance-provider";
 import {
   calculateReadingProgress,
   clampReadingProgress,
   findReaderAnchor,
   findVisibleReaderAnchor,
-  getInitialReaderTheme,
   getReaderErrorMessage,
   getScrollPositionForProgress,
-  persistReaderTheme,
   READER_PROGRESS_THROTTLE_MS,
-  type ReaderTheme,
 } from "../features/reader/reader-utils";
 import { cn } from "../lib/utils";
 
@@ -41,7 +39,8 @@ type ProgressSaveState = "idle" | "saving" | "saved" | "error";
 export function ReaderPage() {
   const { articleId = "" } = useParams();
   const queryClient = useQueryClient();
-  const [theme, setTheme] = useState<ReaderTheme>(() => getInitialReaderTheme());
+  const { preferences, updatePreferences } = useAppearance();
+  const { theme, readerFont, textSize } = preferences;
   const [visualProgress, setVisualProgress] = useState(0);
   const [progressSaveState, setProgressSaveState] = useState<ProgressSaveState>("idle");
   const readerContentRef = useRef<HTMLDivElement | null>(null);
@@ -166,9 +165,8 @@ export function ReaderPage() {
   });
 
   // Mengubah theme Reader dan mempertahankannya di browser yang sedang digunakan.
-  function handleThemeChange(nextTheme: ReaderTheme) {
-    setTheme(nextTheme);
-    persistReaderTheme(nextTheme);
+  function handleThemeChange(nextTheme: typeof theme) {
+    updatePreferences({ theme: nextTheme });
   }
 
   // Menunggu progress terakhir lalu mengirim mutation mark finished tanpa membiarkan queue lama menimpa progress 100.
@@ -304,7 +302,7 @@ export function ReaderPage() {
         </div>
         {finishMutation.error ? <p className="mt-3 border-l-2 border-[var(--danger)] pl-3 text-sm text-[var(--danger)]" role="alert">{getReaderErrorMessage(finishMutation.error)}</p> : null}
         <ArticleMetadata article={article} />
-        <ReaderHighlights article={article} dark={dark} bodyRef={readerBodyRef} />
+        <ReaderHighlights article={article} dark={dark} readerFont={readerFont} textSize={textSize} bodyRef={readerBodyRef} />
       </div>
     </div>
   );

@@ -46,14 +46,14 @@ function isLibrarySort(value: string | null): value is LibrarySort {
 }
 
 // Membaca state Library dari URL dan memberikan default stabil untuk parameter yang tidak ada.
-export function parseLibrarySearchParams(searchParams: URLSearchParams): LibraryUrlState {
+export function parseLibrarySearchParams(searchParams: URLSearchParams, defaultView: LibraryView = DEFAULT_LIBRARY_VIEW): LibraryUrlState {
   const favoriteParam = searchParams.get("favorite");
   const archivedParam = searchParams.get("archived");
   const statusParam = searchParams.get("status");
   const sortParam = searchParams.get("sort");
 
   return {
-    view: searchParams.get("view") === "list" ? "list" : DEFAULT_LIBRARY_VIEW,
+    view: searchParams.get("view") === "list" ? "list" : searchParams.get("view") === "grid" ? "grid" : defaultView,
     status: isReadingStatus(statusParam) ? statusParam : undefined,
     tagId: searchParams.get("tagId")?.trim() || undefined,
     favorite: favoriteParam === "true" ? "favorite" : "all",
