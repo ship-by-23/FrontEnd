@@ -11,7 +11,7 @@ import { deleteArticle, getLibraryArticles, updateArticle, type ArticleUpdateInp
 import { ArticleGrid, ArticleList } from "../features/library/library-components";
 import { LibraryToolbar } from "../features/library/library-toolbar";
 import { attachArticleTag, detachArticleTag, type ArticleTagAction } from "../features/tags/tags-api";
-import { useAppearance } from "../features/appearance/appearance-provider";
+import { useAppearance } from "../features/appearance/appearance-context";
 import {
   applyArticleUpdateToCollection,
   findTagName,

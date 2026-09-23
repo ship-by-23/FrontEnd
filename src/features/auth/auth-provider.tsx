@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { queryClient } from "../../app/query-client";
-import { ApiError } from "../../lib/api/client";
+import { ApiError, SESSION_EXPIRED_EVENT } from "../../lib/api/client";
 import type { User } from "../../lib/api/types";
 import { AuthContext, type AuthContextValue, type AuthState, type SessionResult } from "./auth-context";
 import { getCurrentUser, logoutUser } from "./auth-api";
@@ -55,8 +55,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Mengubah route privat menjadi unauthenticated ketika API client gagal me-refresh session.
+    function handleSessionExpired() {
+      sessionRequestId.current += 1;
+      queryClient.clear();
+      setState({ status: "unauthenticated", user: null, error: null });
+    }
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
     const task = window.setTimeout(() => void refresh(), 0);
-    return () => window.clearTimeout(task);
+    return () => {
+      window.clearTimeout(task);
+      window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    };
   }, [refresh]);
 
   const value = useMemo<AuthContextValue>(() => ({ ...state, refresh, logout }), [state, refresh, logout]);

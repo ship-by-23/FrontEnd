@@ -1,13 +1,56 @@
 import { Link } from "react-router-dom";
 import { AppearanceSettings } from "../features/appearance/appearance-components";
 import { SettingsNavigation, type SettingsSection } from "../features/settings/settings-navigation";
+import { ProfileSettingsPanel, SecuritySettingsPanel } from "../features/settings/settings-components";
+
+type SettingsLayoutProps = {
+  section: Exclude<SettingsSection, "appearance" | "bookmarklet">;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+};
+
+// Menyatukan header dan navigasi untuk halaman settings yang menggunakan data session nyata.
+function SettingsLayout({ section, title, description, children }: SettingsLayoutProps) {
+  return (
+    <div className="mx-auto max-w-4xl">
+      <header className="border-b border-[var(--border)] pb-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Pengaturan</p>
+        <h1 className="font-editorial mt-1 text-5xl font-semibold">{title}</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">{description}</p>
+        <SettingsNavigation active={section} />
+      </header>
+      <div className="mt-8">{children}</div>
+    </div>
+  );
+}
 
 export function SettingsPage({ section }: { section: SettingsSection }) {
   if (section === "appearance") return <AppearanceSettings />;
+  if (section === "profile") {
+    return (
+      <SettingsLayout
+        section="profile"
+        title="Profil"
+        description="Kelola identitas akun melalui endpoint profil resmi dan session user aktif."
+      >
+        <ProfileSettingsPanel />
+      </SettingsLayout>
+    );
+  }
+  if (section === "security") {
+    return (
+      <SettingsLayout
+        section="security"
+        title="Keamanan"
+        description="Ubah password dan kelola session tanpa menyimpan credential jangka panjang di browser."
+      >
+        <SecuritySettingsPanel />
+      </SettingsLayout>
+    );
+  }
 
   const content: Record<string, [string, string]> = {
-    profile: ["Profil", "Perbarui identitas akun melalui API profil setelah kontrak field final tersedia."],
-    security: ["Keamanan", "Perubahan password dan pengelolaan sesi akan menggunakan kontrak autentikasi resmi."],
     bookmarklet: ["Bookmarklet", "Gunakan route /articles/new?url=… untuk mengisi URL tanpa menyimpan kredensial pada bookmarklet."],
   };
   const [title, description] = content[section] ?? ["Pengaturan", "Pengaturan akun."];

@@ -15,6 +15,17 @@ export type LoginInput = {
   password: string;
 };
 
+export type ProfileUpdateInput = {
+  name: string;
+  email: string;
+};
+
+export type PasswordUpdateInput = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
 // Membuat akun melalui endpoint auth nyata tanpa menyimpan credential di client.
 export function registerUser(input: RegisterInput) {
   return apiRequest<unknown>("/auth/register", {
@@ -36,6 +47,22 @@ export function loginUser(input: LoginInput) {
 // Mengambil user aktif; api client menangani satu kali refresh jika session access expired.
 export function getCurrentUser() {
   return apiRequest<AuthUserResponse>("/me");
+}
+
+// Memperbarui field profil yang didukung backend tanpa menyimpan response mentah sebagai state lokal.
+export function updateCurrentUser(input: ProfileUpdateInput) {
+  return apiRequest<unknown>("/me", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+// Mengubah password melalui endpoint resmi tanpa menyimpan credential setelah request selesai.
+export function updateCurrentPassword(input: PasswordUpdateInput) {
+  return apiRequest<unknown>("/me/password", {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
 }
 
 // Mencabut session aktif tanpa mencoba refresh ketika server mengembalikan 401.

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   APPEARANCE_STORAGE_KEY,
   DEFAULT_APPEARANCE_PREFERENCES,
@@ -10,15 +10,7 @@ import {
   READER_THEME_STORAGE_KEY,
   type AppearancePreferences,
 } from "./appearance-utils";
-
-type AppearanceContextValue = {
-  preferences: AppearancePreferences;
-  storageAvailable: boolean;
-  updatePreferences: (patch: Partial<AppearancePreferences>) => boolean;
-  resetPreferences: () => boolean;
-};
-
-const AppearanceContext = createContext<AppearanceContextValue | null>(null);
+import { AppearanceContext, type AppearanceContextValue } from "./appearance-context";
 
 // Menjaga preference tampilan yang sama ketika user berpindah antara Settings, Reader, dan Library.
 export function AppearanceProvider({ children }: { children: ReactNode }) {
@@ -67,11 +59,4 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   }), [preferences, resetPreferences, storageAvailable, updatePreferences]);
 
   return <AppearanceContext.Provider value={value}>{children}</AppearanceContext.Provider>;
-}
-
-// Mengambil preference tampilan aktif dan memastikan hook hanya digunakan di bawah provider.
-export function useAppearance() {
-  const context = useContext(AppearanceContext);
-  if (!context) throw new Error("useAppearance harus digunakan di dalam AppearanceProvider.");
-  return context;
 }

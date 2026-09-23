@@ -42,8 +42,8 @@ function ProtectedRoute() {
 
 // Menampilkan kegagalan route tanpa membocorkan stack trace internal.
 function RouteErrorBoundary() {
-  const error = useRouteError();
-  return <main className="grid min-h-screen place-items-center p-6"><div className="max-w-lg"><ErrorState title="Halaman mengalami kendala" message={error instanceof Error ? error.message : "Terjadi kesalahan yang tidak dikenali."} /><Button className="mt-4" onClick={() => window.location.assign("/")}>Kembali ke awal</Button></div></main>;
+  useRouteError();
+  return <main className="grid min-h-screen place-items-center p-6"><div className="max-w-lg"><ErrorState title="Halaman mengalami kendala" message="Terjadi kesalahan saat menampilkan halaman. Coba lagi atau kembali ke Library." /><div className="mt-4 flex flex-wrap gap-3"><Button onClick={() => window.location.reload()}>Coba lagi</Button><Button variant="secondary" onClick={() => window.location.assign("/library")}>Kembali ke Library</Button></div></div></main>;
 }
 
 export const router = createBrowserRouter([

@@ -42,6 +42,8 @@ npm test        # jalankan test sekali
 Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`). Frontend memakai endpoint berikut:
 
 - `GET /me`
+- `PATCH /me`
+- `PUT /me/password`
 - `POST /auth/register`
 - `POST /auth/login`
 - `POST /auth/refresh`
@@ -52,6 +54,7 @@ Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`).
 - `PATCH /articles/:articleId`
 - `DELETE /articles/:articleId`
 - `POST /articles/:articleId/retry`
+- `PUT /articles/:articleId/progress`
 - `GET /tags`
 - `POST /tags`
 - `PATCH /tags/:tagId`
@@ -67,3 +70,14 @@ Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`).
 Refresh session menggunakan cookie HTTP-only dengan `credentials: include`.
 
 Save Article melakukan validasi URL dasar di browser, mengirim tag opsional jika dipilih, lalu memantau `pending`, `processing`, `completed`, atau `failed` dengan bounded polling. Progress extraction tidak dibuat di frontend.
+
+## Production container
+
+Build image dengan API URL yang sesuai environment:
+
+```bash
+docker build --build-arg VITE_API_URL=https://api.example.com/api/v1 -t simpandulu-frontend .
+docker run --rm -p 8080:80 simpandulu-frontend
+```
+
+`nginx.conf` mengaktifkan SPA fallback, header keamanan dasar, dan CSP. Ganti origin `https://api.example.com` pada `connect-src` dengan origin API production yang sebenarnya sebelum deployment.
