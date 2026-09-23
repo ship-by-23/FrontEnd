@@ -71,8 +71,6 @@ Refresh session menggunakan cookie HTTP-only dengan `credentials: include`.
 
 Save Article melakukan validasi URL dasar di browser, mengirim tag opsional jika dipilih, lalu memantau `pending`, `processing`, `completed`, atau `failed` dengan bounded polling. Progress extraction tidak dibuat di frontend.
 
-Runtime tidak memakai data dummy. Saat database kosong, halaman menampilkan empty state; saat API bermasalah, pengguna mendapat pesan error dan opsi untuk mencoba lagi.
-
 ## Production container
 
 Build image dengan API URL yang sesuai environment:
