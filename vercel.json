@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://simpandulu-api.vercel.app/api/:path*"
+    }
+  ]
+}
