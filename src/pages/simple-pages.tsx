@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { AppearanceSettings } from "../features/appearance/appearance-components";
+import { SettingsNavigation, type SettingsSection } from "../features/settings/settings-navigation";
 
-export function SettingsPage({ section }: { section: string }) {
+export function SettingsPage({ section }: { section: SettingsSection }) {
   if (section === "appearance") return <AppearanceSettings />;
 
   const content: Record<string, [string, string]> = {
@@ -10,7 +11,7 @@ export function SettingsPage({ section }: { section: string }) {
     bookmarklet: ["Bookmarklet", "Gunakan route /articles/new?url=… untuk mengisi URL tanpa menyimpan kredensial pada bookmarklet."],
   };
   const [title, description] = content[section] ?? ["Pengaturan", "Pengaturan akun."];
-  return <div className="mx-auto max-w-3xl"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Pengaturan</p><h1 className="font-editorial mt-1 text-5xl font-semibold">{title}</h1><section className="mt-8 border border-[var(--border)] bg-[var(--surface)] p-6"><p className="leading-7 text-[var(--text-muted)]">{description}</p></section></div>;
+  return <div className="mx-auto max-w-3xl"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Pengaturan</p><h1 className="font-editorial mt-1 text-5xl font-semibold">{title}</h1><SettingsNavigation active={section} /><section className="mt-8 border border-[var(--border)] bg-[var(--surface)] p-6"><p className="leading-7 text-[var(--text-muted)]">{description}</p></section></div>;
 }
 
 export function NotFoundPage() {
