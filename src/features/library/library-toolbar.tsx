@@ -122,7 +122,7 @@ export function LibraryToolbar({
         open={filterDialogOpen}
         title="Filter library"
         titleId="library-filter-dialog-title"
-        description="Pilihan ini memengaruhi artikel yang diambil dari server."
+        description="Pilihan ini memengaruhi artikel yang tampil di Library."
         onClose={closeFilterDialog}
         size="wide"
       >

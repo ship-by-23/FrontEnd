@@ -85,7 +85,7 @@ export function BookmarkletSetupCard({ source, onCopy, onTest, onUse, feedback, 
       <BookmarkletTestState feedback={feedback} />
 
       <div className="mt-6 grid gap-2">
-        <label htmlFor="bookmarklet-source" className="text-sm font-semibold">Source bookmarklet</label>
+        <label htmlFor="bookmarklet-source" className="text-sm font-semibold">Kode bookmarklet</label>
         <textarea
           ref={sourceRef}
           id="bookmarklet-source"
@@ -96,7 +96,7 @@ export function BookmarkletSetupCard({ source, onCopy, onTest, onUse, feedback, 
           aria-describedby="bookmarklet-source-help"
           onFocus={(event) => event.currentTarget.select()}
         />
-        <p id="bookmarklet-source-help" className="text-xs leading-5 text-[var(--text-muted)]">Jika tombol Copy tidak tersedia, fokuskan field ini, pilih seluruh source, lalu salin dengan Ctrl+C atau Cmd+C.</p>
+        <p id="bookmarklet-source-help" className="text-xs leading-5 text-[var(--text-muted)]">Jika tombol salin tidak tersedia, pilih seluruh kode ini lalu salin dengan Ctrl+C atau Cmd+C.</p>
       </div>
 
       {children}
@@ -123,8 +123,8 @@ export function InstallInstructions() {
 export function BrowserInstructions() {
   return (
     <section aria-labelledby="bookmarklet-browser-title" className="border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
-      <h2 id="bookmarklet-browser-title" className="font-editorial text-3xl font-semibold">Jika drag tidak tersedia</h2>
-      <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">Gunakan tombol Copy bookmarklet, buat bookmark baru melalui menu browser, lalu tempel source tersebut ke field URL atau address bookmark. Source harus tetap diawali <code className="border border-[var(--border-muted)] bg-[var(--surface-muted)] px-1.5 py-0.5 font-mono text-xs">javascript:</code>.</p>
+      <h2 id="bookmarklet-browser-title" className="font-editorial text-3xl font-semibold">Cara lain memasang</h2>
+      <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">Gunakan tombol salin, buat bookmark baru melalui menu browser, lalu tempel kode tersebut ke kolom alamat bookmark. Kode harus tetap diawali <code className="border border-[var(--border-muted)] bg-[var(--surface-muted)] px-1.5 py-0.5 font-mono text-xs">javascript:</code>.</p>
       <p className="mt-4 border-l-2 border-[var(--accent)] pl-3 text-sm leading-6 text-[var(--text-muted)]">Klik link bookmarklet di halaman ini juga dapat dipakai sebagai test. Aplikasi akan membuka Save Article di tab baru dengan halaman settings sebagai contoh URL.</p>
     </section>
   );

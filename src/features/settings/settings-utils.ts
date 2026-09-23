@@ -42,12 +42,12 @@ export function validatePasswordForm(fields: PasswordFormFields): SettingsFormEr
 
 // Mengubah status API menjadi pesan publik yang aman untuk halaman pengaturan.
 export function getSettingsErrorMessage(error: unknown, action: "profile" | "password") {
-  if (!(error instanceof ApiError)) return "Server belum dapat dihubungi. Periksa koneksi lalu coba lagi.";
+  if (!(error instanceof ApiError)) return "Layanan belum dapat dihubungi. Periksa koneksi lalu coba lagi.";
   if (error.status === 401) return "Sesi berakhir. Masuk kembali untuk mengubah pengaturan.";
   if (error.status === 403) return "Kamu tidak memiliki izin untuk mengubah pengaturan ini.";
   if (error.status === 409 && action === "profile") return "Email tersebut sudah digunakan akun lain.";
   if (error.status === 422) return action === "password" ? "Password saat ini atau password baru tidak dapat digunakan." : "Periksa kembali data profil.";
   if (error.status === 429) return "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.";
-  if (error.status >= 500) return "Server sedang mengalami kendala. Coba lagi beberapa saat.";
+  if (error.status >= 500) return "Layanan sedang mengalami kendala. Coba lagi beberapa saat.";
   return action === "password" ? "Password belum dapat diubah. Coba lagi." : "Profil belum dapat diperbarui. Coba lagi.";
 }

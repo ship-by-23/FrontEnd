@@ -91,7 +91,7 @@ export function SearchFilters({
         open={filterDialogOpen}
         title="Filter pencarian"
         titleId="search-filter-dialog-title"
-        description="Filter ini memakai contract yang sama dengan Library."
+        description="Gunakan pilihan penyaring yang sama seperti di Library."
         onClose={closeFilterDialog}
         size="wide"
       >

@@ -35,14 +35,14 @@ export function BookmarkletSettingsPage() {
   async function handleCopy() {
     const result = await copyBookmarkletSource(bookmarkletSource, sourceRef.current);
     if (result === "copied") {
-      setFeedback({ tone: "success", message: "Source bookmarklet berhasil disalin ke clipboard." });
+      setFeedback({ tone: "success", message: "Kode bookmarklet berhasil disalin." });
       return;
     }
     if (result === "selected") {
-      setFeedback({ tone: "info", message: "Clipboard tidak tersedia. Source sudah dipilih; tekan Ctrl+C atau Cmd+C untuk menyalinnya." });
+      setFeedback({ tone: "info", message: "Kode sudah dipilih. Tekan Ctrl+C atau Cmd+C untuk menyalinnya." });
       return;
     }
-    setFeedback({ tone: "error", message: "Source belum dapat dipilih otomatis. Pilih source secara manual lalu salin dari field di atas." });
+    setFeedback({ tone: "error", message: "Kode belum dapat dipilih otomatis. Pilih kode secara manual lalu salin dari kotak di atas." });
   }
 
   // Membuka flow Save Article dengan URL halaman settings untuk memverifikasi handoff tanpa menyimpan artikel.
@@ -53,12 +53,12 @@ export function BookmarkletSettingsPage() {
       setFeedback({ tone: "error", message: "Tab baru diblokir browser. Izinkan pop-up untuk SimpanDulu atau gunakan link bookmarklet secara langsung." });
       return;
     }
-    setFeedback({ tone: "success", message: "Flow Save Article dibuka di tab baru dengan URL halaman ini." });
+    setFeedback({ tone: "success", message: "Form simpan artikel dibuka di tab baru dengan alamat halaman ini." });
   }
 
   // Menjelaskan bahwa klik link bookmarklet adalah test handoff dan bukan aksi penyimpanan otomatis.
   function handleBookmarkletUse() {
-    setFeedback({ tone: "success", message: "Bookmarklet dijalankan. SimpanDulu membuka form Save Article; artikel belum disimpan sampai kamu mengonfirmasi." });
+    setFeedback({ tone: "success", message: "Form simpan artikel dibuka. Artikel belum disimpan sampai kamu mengonfirmasinya." });
   }
 
   return (
@@ -66,7 +66,7 @@ export function BookmarkletSettingsPage() {
       <header className="border-b border-[var(--border)] pb-7">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Pengaturan</p>
         <h1 className="font-editorial mt-1 text-5xl font-semibold">Bookmarklet</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Simpan halaman yang sedang kamu baca ke SimpanDulu dengan satu klik. Bookmarklet hanya meneruskan URL halaman dan tidak menyimpan credential jangka panjang.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Simpan halaman yang sedang kamu baca ke SimpanDulu dengan satu klik. Bookmarklet hanya membawa alamat halaman dan tidak menyimpan informasi akunmu.</p>
         <SettingsNavigation active="bookmarklet" />
       </header>
 
@@ -78,7 +78,7 @@ export function BookmarkletSettingsPage() {
         <section aria-labelledby="bookmarklet-result-title" className="border border-[var(--border)] bg-[var(--surface-muted)] p-5 sm:p-7">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Hasil handoff</p>
           <h2 id="bookmarklet-result-title" className="font-editorial mt-2 text-3xl font-semibold">URL masuk ke Save Article</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Saat bookmarklet dipakai, SimpanDulu membuka route berikut dan mengisi field URL menggunakan alamat halaman yang sedang aktif:</p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Saat bookmarklet dipakai, SimpanDulu membuka form simpan artikel dan mengisi alamat halaman yang sedang aktif:</p>
           <code className="mt-4 block overflow-x-auto border border-[var(--border-muted)] bg-[var(--surface)] p-3 font-mono text-xs text-[var(--text)]">/articles/new?url=%5BURL%20halaman%20saat%20ini%5D</code>
         </section>
 

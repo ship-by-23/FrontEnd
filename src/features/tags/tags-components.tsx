@@ -299,7 +299,7 @@ export function ArticleTagManager({ article, tags, tagsLoading, tagsError, actio
         open={open}
         title="Kelola tag artikel"
         titleId={`article-tag-dialog-${article.id}`}
-        description="Pilih tag yang ingin dipasang. Setiap perubahan disimpan melalui API."
+        description="Pilih tag yang ingin dipasang pada artikel."
         onClose={() => {
           if (!dialogBusy) setOpen(false);
         }}

@@ -25,7 +25,7 @@ export function ThemeSelector({ value, onChange }: ThemeSelectorProps) {
   return (
     <fieldset>
       <legend className="text-sm font-semibold">Tema Reader</legend>
-      <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">Mengubah warna Reader tanpa mengganti route artikel.</p>
+      <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">Mengubah warna Reader tanpa meninggalkan artikel.</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className={cn("flex min-h-12 cursor-pointer items-center gap-3 border px-4 transition-colors", value === "light" ? "border-[var(--border)] bg-[var(--surface-muted)]" : "border-[var(--border-muted)] hover:bg-[var(--surface-muted)]")}>
           <input type="radio" name="appearance-theme" value="light" checked={value === "light"} onChange={() => onChange("light")} />
@@ -143,13 +143,13 @@ export function AppearanceSettings() {
   // Menerapkan patch preference sekaligus memberi feedback ringan untuk perubahan yang berhasil diproses.
   function handlePreferenceChange(patch: Partial<AppearancePreferences>) {
     const persisted = updatePreferences(patch);
-    setFeedback(persisted ? "Perubahan tampilan diterapkan." : "Perubahan diterapkan untuk sesi ini; browser menolak penyimpanan lokal.");
+    setFeedback(persisted ? "Perubahan tampilan diterapkan." : "Perubahan diterapkan untuk saat ini, tetapi belum dapat diingat.");
   }
 
   // Mengembalikan seluruh kontrol Appearance ke default yang aman untuk user baru.
   function handleReset() {
     const persisted = resetPreferences();
-    setFeedback(persisted ? "Preference dikembalikan ke default." : "Default diterapkan untuk sesi ini; browser menolak penyimpanan lokal.");
+    setFeedback(persisted ? "Pilihan dikembalikan ke awal." : "Pilihan awal diterapkan untuk saat ini.");
   }
 
   return (
@@ -157,7 +157,7 @@ export function AppearanceSettings() {
       <header className="border-b border-[var(--border)] pb-7">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Pengaturan</p>
         <h1 className="font-editorial mt-1 text-5xl font-semibold">Tampilan</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Atur pengalaman membaca dan tampilan awal Library. Preference disimpan di browser ini sampai sinkronisasi antardevice memiliki contract resmi.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Atur pengalaman membaca dan tampilan awal Library. Pilihanmu akan diingat untuk kunjungan berikutnya.</p>
         <SettingsNavigation active="appearance" />
       </header>
 
@@ -168,7 +168,7 @@ export function AppearanceSettings() {
         </section>
 
         <section aria-labelledby="appearance-type-title" className="border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7">
-          <h2 id="appearance-type-title" className="font-editorial text-3xl font-semibold">Typography Reader</h2>
+          <h2 id="appearance-type-title" className="font-editorial text-3xl font-semibold">Teks bacaan</h2>
           <div className="mt-6 grid gap-8 lg:grid-cols-2">
             <ReaderFontSelector value={preferences.readerFont} onChange={(readerFont) => handlePreferenceChange({ readerFont })} />
             <TextSizeControl value={preferences.textSize} onChange={(textSize) => handlePreferenceChange({ textSize })} />
@@ -184,8 +184,8 @@ export function AppearanceSettings() {
 
         <div className="flex flex-col gap-4 border-t border-[var(--border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold" role="status" aria-live="polite">{feedback || "Preference aktif di browser ini."}</p>
-            {!storageAvailable ? <p className="mt-1 text-sm text-[var(--warning)]">Browser tidak mengizinkan penyimpanan lokal. Preview tetap aktif, tetapi perubahan dapat hilang setelah refresh.</p> : null}
+            <p className="text-sm font-semibold" role="status" aria-live="polite">{feedback || "Pilihan tampilan aktif."}</p>
+            {!storageAvailable ? <p className="mt-1 text-sm text-[var(--warning)]">Pilihanmu mungkin tidak bertahan setelah halaman dimuat ulang.</p> : null}
           </div>
           <div className="flex flex-wrap gap-3">
             <Button variant="secondary" onClick={handleReset}><RotateCcw className="size-4" aria-hidden="true" />Kembalikan default</Button>

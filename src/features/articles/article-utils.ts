@@ -31,8 +31,8 @@ export function getExtractionStatusLabel(status: ExtractionStatus | null | undef
   if (status === "pending") return "Menunggu proses";
   if (status === "processing") return "Sedang menyiapkan artikel";
   if (status === "completed") return "Artikel siap";
-  if (status === "failed") return "Ekstraksi gagal";
-  return "Menyiapkan penyimpanan";
+  if (status === "failed") return "Artikel belum siap";
+  return "Menyiapkan artikel";
 }
 
 // Menyediakan pesan aman untuk kode kegagalan extraction yang boleh diketahui user.
@@ -43,19 +43,19 @@ export function getExtractionErrorMessage(code: string | null | undefined): stri
     case "FETCH_TIMEOUT":
       return "Halaman sumber terlalu lama merespons.";
     case "RESPONSE_TOO_LARGE":
-      return "Halaman sumber terlalu besar untuk diproses.";
+      return "Halaman sumber terlalu besar untuk disiapkan.";
     case "UNSUPPORTED_CONTENT":
-      return "Halaman sumber bukan konten HTML yang didukung.";
+      return "Halaman sumber tidak berisi artikel yang bisa disimpan.";
     case "EXTRACTION_FAILED":
-      return "Isi artikel tidak dapat diekstrak dari halaman sumber.";
+      return "Isi artikel tidak dapat diambil dari halaman sumber.";
     default:
-      return "Ekstraksi artikel belum berhasil. Kamu dapat mencoba lagi.";
+      return "Artikel belum berhasil disiapkan. Kamu dapat mencoba lagi.";
   }
 }
 
 // Memetakan error API menjadi feedback publik tanpa merender detail internal server.
 export function getSaveArticleErrorMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) return "Server belum dapat dihubungi. Periksa koneksi lalu coba lagi.";
+  if (!(error instanceof ApiError)) return "Layanan belum dapat dihubungi. Periksa koneksi lalu coba lagi.";
   if (error.fields?.url) return error.fields.url;
 
   switch (error.code) {
@@ -64,11 +64,11 @@ export function getSaveArticleErrorMessage(error: unknown): string {
     case "FETCH_TIMEOUT":
       return "Halaman sumber terlalu lama merespons.";
     case "RESPONSE_TOO_LARGE":
-      return "Halaman sumber terlalu besar untuk diproses.";
+      return "Halaman sumber terlalu besar untuk disiapkan.";
     case "UNSUPPORTED_CONTENT":
-      return "Halaman sumber bukan konten HTML yang didukung.";
+      return "Halaman sumber tidak berisi artikel yang bisa disimpan.";
     case "EXTRACTION_FAILED":
-      return "Isi artikel tidak dapat diekstrak. Kamu dapat mencoba lagi.";
+      return "Isi artikel tidak dapat diambil. Kamu dapat mencoba lagi.";
     case "DUPLICATE_URL":
     case "ARTICLE_ALREADY_EXISTS":
       return "URL ini sudah ada di library. Gunakan artikel yang sudah tersimpan.";

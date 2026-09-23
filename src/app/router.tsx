@@ -35,7 +35,7 @@ function ProtectedRoute() {
   const auth = useAuth();
   const location = useLocation();
   if (auth.status === "loading") return <main className="min-h-screen"><LoadingState label="Memeriksa sesi…" /></main>;
-  if (auth.status === "error") return <main className="mx-auto max-w-xl p-6"><ErrorState title="Sesi tidak dapat diperiksa" message="Server belum dapat dihubungi. Data privat tidak ditampilkan." onRetry={() => void auth.refresh()} /></main>;
+  if (auth.status === "error") return <main className="mx-auto max-w-xl p-6"><ErrorState title="Sesi tidak dapat diperiksa" message="Layanan belum dapat dihubungi. Data pribadi belum dapat ditampilkan." onRetry={() => void auth.refresh()} /></main>;
   if (auth.status === "unauthenticated") return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
   return <Outlet />;
 }

@@ -40,7 +40,7 @@ type ProgressSaveState = "idle" | "saving" | "saved" | "error";
 export function ReaderPage() {
   const { articleId = "" } = useParams();
   const queryClient = useQueryClient();
-  const { preferences, updatePreferences } = useAppearance();
+  const { preferences } = useAppearance();
   const { theme, readerFont, textSize } = preferences;
   const [visualProgress, setVisualProgress] = useState(0);
   const [progressSaveState, setProgressSaveState] = useState<ProgressSaveState>("idle");
@@ -121,7 +121,7 @@ export function ReaderPage() {
     onSuccess: async () => {
       setExtractionPollingAttempt((current) => current + 1);
       await queryClient.invalidateQueries({ queryKey: ["article", articleId] });
-      toast.success("Ekstraksi dimulai lagi.");
+      toast.success("Artikel sedang disiapkan lagi.");
     },
   });
 
@@ -238,11 +238,6 @@ export function ReaderPage() {
     updateReadingProgressRef.current = updateReadingProgress;
   });
 
-  // Mengubah theme Reader dan mempertahankannya di browser yang sedang digunakan.
-  function handleThemeChange(nextTheme: typeof theme) {
-    updatePreferences({ theme: nextTheme });
-  }
-
   // Menghidupkan kembali polling extraction setelah batas pemantauan otomatis tercapai.
   function resumeExtractionPolling() {
     if (!article || !isExtractionPending(article.extractionStatus)) return;
@@ -342,14 +337,14 @@ export function ReaderPage() {
     return <div className="-m-4 min-h-[calc(100vh-4rem)] bg-[var(--surface)] p-4 sm:-m-6 sm:p-8 lg:-m-10 lg:p-12"><ReaderSkeleton /></div>;
   }
   if (articleQuery.isError) return <ReaderErrorState message={getReaderErrorMessage(articleQuery.error)} onRetry={() => void articleQuery.refetch()} />;
-  if (!article) return <ReaderErrorState message="Artikel tidak ditemukan atau respons server tidak lengkap." />;
+  if (!article) return <ReaderErrorState message="Artikel tidak ditemukan atau belum dapat dimuat." />;
 
   if (isExtractionPending(article.extractionStatus)) {
     if (extractionPollingTimedOut) {
       return (
         <ReaderErrorState
-          title="Ekstraksi belum selesai"
-          message="Pemantauan otomatis dihentikan setelah beberapa saat. Kamu dapat mencoba memeriksa status artikel lagi."
+          title="Artikel belum siap dibaca"
+          message="Proses penyiapan membutuhkan waktu lebih lama. Coba periksa lagi beberapa saat."
           onRetry={resumeExtractionPolling}
         />
       );
@@ -366,7 +361,7 @@ export function ReaderPage() {
     const retryError = retryMutation.error ? getReaderErrorMessage(retryMutation.error) : null;
     return (
       <ReaderErrorState
-        title="Ekstraksi artikel gagal"
+        title="Artikel belum siap dibaca"
         message={retryError ?? getExtractionErrorMessage(article.extractionErrorCode)}
         onRetry={retryMutation.isPending ? undefined : () => retryMutation.mutate()}
       />
@@ -382,12 +377,9 @@ export function ReaderPage() {
       <ReadingProgressBar progress={visualProgress} dark={dark} />
       <div ref={readerContentRef} className="mx-auto max-w-3xl">
         <ReaderHeader
-          articleId={article.id}
-          theme={theme}
           dark={dark}
           isFinished={article.readingStatus === "finished"}
           isMarkingFinished={finishMutation.isPending || progressSaveState === "saving"}
-          onThemeChange={handleThemeChange}
           onMarkFinished={() => void handleMarkFinished()}
         />
         <div className="mt-3 flex min-h-5 justify-end">

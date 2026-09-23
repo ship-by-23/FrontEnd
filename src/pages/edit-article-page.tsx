@@ -31,7 +31,7 @@ function EditArticleSkeleton() {
       <div className="h-12 max-w-xl animate-pulse bg-[var(--surface-muted)]" aria-hidden="true" />
       <div className="h-64 animate-pulse border border-[var(--border-muted)] bg-[var(--surface)]" aria-hidden="true" />
       <div className="h-80 animate-pulse border border-[var(--border-muted)] bg-[var(--surface)]" aria-hidden="true" />
-      <span className="sr-only">Memuat metadata dan state artikel…</span>
+      <span className="sr-only">Memuat artikel…</span>
     </div>
   );
 }
@@ -175,7 +175,7 @@ export function EditArticlePage() {
   if (!articleId) return <EditArticleLoadError message="ID artikel tidak valid." />;
   if (articleQuery.isPending) return <EditArticleSkeleton />;
   if (articleQuery.isError) return <EditArticleLoadError message={getEditArticleLoadErrorMessage(articleQuery.error)} onRetry={() => void articleQuery.refetch()} />;
-  if (!article) return <EditArticleLoadError message="Artikel tidak ditemukan atau response server tidak lengkap." />;
+  if (!article) return <EditArticleLoadError message="Artikel tidak ditemukan atau belum dapat dimuat." />;
   if (!formValues) return <EditArticleSkeleton />;
 
   const mutationError = updateMutation.error ? getEditArticleMutationErrorMessage(updateMutation.error, "update") : null;
@@ -194,7 +194,7 @@ export function EditArticlePage() {
           <Pencil className="size-6" aria-hidden="true" />
           <h1 className="font-editorial text-5xl font-semibold">Edit artikel</h1>
         </div>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Kelola state artikel tanpa mengubah metadata hasil ekstraksi secara diam-diam.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Atur status, favorit, arsip, dan tag artikelmu.</p>
       </header>
 
       <div className="mt-8 grid gap-6">

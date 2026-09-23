@@ -22,10 +22,10 @@ export function ArticleTags({ articleId, serverTags = [] }: { articleId: string;
       <div className="flex flex-wrap items-center gap-2">
         <TagIcon className="size-4" aria-hidden="true" />
         <h2 id="article-tags-heading" className="text-sm font-semibold">Tag artikel</h2>
-        <span className="text-xs text-[var(--text-muted)]">Tag perangkat ini hanya tersimpan di browser.</span>
+        <span className="text-xs text-[var(--text-muted)]">Tag ini hanya tersedia di perangkat ini.</span>
       </div>
       {serverTags.length > 0 ? (
-        <div className="mt-4 flex flex-wrap gap-2" aria-label="Tag dari server">
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="Tag artikel yang tersimpan">
           {serverTags.map((tag) => <span key={tag.id} className="rounded-full border border-[var(--border-muted)] px-3 py-1 text-xs">{tag.name}</span>)}
         </div>
       ) : null}
