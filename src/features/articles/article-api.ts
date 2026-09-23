@@ -1,5 +1,6 @@
 import { apiRequest } from "../../lib/api/client";
 import type { Article, ExtractionStatus, ReadingStatus, Tag } from "../../lib/api/types";
+import { getTags as getTagsFromTagsApi, unwrapTags as unwrapTagsResponse, type TagCollection as TagsApiCollection } from "../tags/tags-api";
 
 export type ArticleResponse = Article | { data: Article };
 
@@ -23,7 +24,7 @@ export type ArticleStatusUpdate = {
   readingProgress?: number;
 };
 
-export type TagCollection = Tag[] | { data: Tag[] };
+export type TagCollection = TagsApiCollection;
 
 // Mengirim URL dan tag yang dipilih ke endpoint artikel tanpa membuat endpoint UI baru.
 export function createArticle(input: CreateArticleInput) {
@@ -63,7 +64,7 @@ export function retryArticle(articleId: string) {
 
 // Mengambil tag milik user aktif untuk selector opsional pada form simpan artikel.
 export function getTags(signal?: AbortSignal) {
-  return apiRequest<TagCollection>("/tags", { signal });
+  return getTagsFromTagsApi(signal);
 }
 
 // Menormalkan response detail artikel yang dapat menggunakan envelope data atau object langsung.
@@ -73,7 +74,7 @@ export function unwrapArticle(response: ArticleResponse): Article {
 
 // Menormalkan response tag tanpa membuat fallback data ketika database kosong.
 export function unwrapTags(response: TagCollection): Tag[] {
-  return Array.isArray(response) ? response : response.data;
+  return unwrapTagsResponse(response);
 }
 
 // Memastikan nilai tidak null dan dapat dibaca sebagai object tanpa memakai any.

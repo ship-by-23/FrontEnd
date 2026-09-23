@@ -16,7 +16,13 @@ export type User = {
 export type ExtractionStatus = "pending" | "processing" | "completed" | "failed";
 export type ReadingStatus = "unread" | "reading" | "finished";
 
-export type Tag = { id: string; name: string };
+export type Tag = {
+  id: string;
+  name: string;
+  normalizedName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 export type ArticleSummary = {
   id: string;

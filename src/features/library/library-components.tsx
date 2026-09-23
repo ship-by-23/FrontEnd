@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { Select } from "../../components/ui/form-controls";
-import type { ArticleSummary, ReadingStatus } from "../../lib/api/types";
+import type { ArticleSummary, ReadingStatus, Tag } from "../../lib/api/types";
 import { cn, formatDate } from "../../lib/utils";
 import type { ArticleUpdateInput } from "./library-api";
+import type { ArticleTagAction } from "../tags/tags-api";
+import { ArticleTagManager } from "../tags/tags-components";
 import {
   getExtractionStatusLabel,
   getReadingStatusLabel,
@@ -18,6 +20,10 @@ type ArticleCardProps = {
   actionPending: boolean;
   onUpdate: (articleId: string, input: ArticleUpdateInput) => void;
   onDelete: (article: ArticleSummary) => void;
+  availableTags?: Tag[];
+  tagsLoading?: boolean;
+  tagsError?: unknown;
+  onTagChange?: (input: ArticleTagAction) => Promise<unknown>;
 };
 
 type ArticleCollectionProps = Omit<ArticleCardProps, "article" | "compact"> & {
@@ -139,7 +145,7 @@ function ArticleActions({ article, actionPending, onUpdate, onDelete }: Omit<Art
 }
 
 // Merender satu artikel dalam mode grid atau list dengan data nyata dari API.
-export function ArticleCard({ article, compact, actionPending, onUpdate, onDelete }: ArticleCardProps) {
+export function ArticleCard({ article, compact, actionPending, onUpdate, onDelete, availableTags = [], tagsLoading = false, tagsError, onTagChange }: ArticleCardProps) {
   const shouldReduceMotion = useReducedMotion();
   const title = article.title ?? "Artikel tanpa judul";
 
@@ -178,25 +184,26 @@ export function ArticleCard({ article, compact, actionPending, onUpdate, onDelet
           {article.estimatedReadingMinutes ? <span className="text-xs text-[var(--text-muted)]">{article.estimatedReadingMinutes} menit baca</span> : null}
         </div>
         <ArticleActions article={article} actionPending={actionPending} onUpdate={onUpdate} onDelete={onDelete} />
+        {onTagChange ? <ArticleTagManager article={article} tags={availableTags} tagsLoading={tagsLoading} tagsError={tagsError} actionPending={actionPending} onTagChange={onTagChange} /> : null}
       </div>
     </motion.article>
   );
 }
 
 // Menampilkan kumpulan artikel dalam layout grid yang tetap memakai satu dataset query.
-export function ArticleGrid({ articles, actionPending, onUpdate, onDelete }: ArticleCollectionProps) {
+export function ArticleGrid({ articles, actionPending, onUpdate, onDelete, availableTags, tagsLoading, tagsError, onTagChange }: ArticleCollectionProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {articles.map((article) => <ArticleCard key={article.id} article={article} compact={false} actionPending={actionPending} onUpdate={onUpdate} onDelete={onDelete} />)}
+      {articles.map((article) => <ArticleCard key={article.id} article={article} compact={false} actionPending={actionPending} onUpdate={onUpdate} onDelete={onDelete} availableTags={availableTags} tagsLoading={tagsLoading} tagsError={tagsError} onTagChange={onTagChange} />)}
     </div>
   );
 }
 
 // Menampilkan kumpulan artikel dalam layout list tanpa membuat query berbeda dari mode grid.
-export function ArticleList({ articles, actionPending, onUpdate, onDelete }: ArticleCollectionProps) {
+export function ArticleList({ articles, actionPending, onUpdate, onDelete, availableTags, tagsLoading, tagsError, onTagChange }: ArticleCollectionProps) {
   return (
     <div className="grid gap-3">
-      {articles.map((article) => <ArticleCard key={article.id} article={article} compact actionPending={actionPending} onUpdate={onUpdate} onDelete={onDelete} />)}
+      {articles.map((article) => <ArticleCard key={article.id} article={article} compact actionPending={actionPending} onUpdate={onUpdate} onDelete={onDelete} availableTags={availableTags} tagsLoading={tagsLoading} tagsError={tagsError} onTagChange={onTagChange} />)}
     </div>
   );
 }
