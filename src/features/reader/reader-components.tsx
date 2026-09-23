@@ -1,10 +1,11 @@
 import { ArrowLeft, Check, ExternalLink, Moon, SlidersHorizontal, Sun } from "lucide-react";
-import type { RefObject } from "react";
+import { useEffect, type RefObject } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, ErrorState } from "../../components/feedback/states";
 import { Button } from "../../components/ui/button";
-import type { Article } from "../../lib/api/types";
+import type { Article, Highlight } from "../../lib/api/types";
 import { cn, formatDate } from "../../lib/utils";
+import { applyHighlightMarks, clearHighlightMarks } from "../highlights/highlight-dom-utils";
 import { getSafeReaderSourceUrl, type ReaderTheme } from "./reader-utils";
 
 type ReaderHeaderProps = {
@@ -146,10 +147,29 @@ type ReaderBodyProps = {
   contentHtml: string | null | undefined;
   dark: boolean;
   bodyRef: RefObject<HTMLElement | null>;
+  highlights?: Highlight[];
+  onHighlightClick?: (highlightId: string) => void;
 };
 
 // Merender hanya HTML yang dijamin sudah disanitasi oleh backend pada contract artikel.
-export function ReaderBody({ contentHtml, dark, bodyRef }: ReaderBodyProps) {
+export function ReaderBody({ contentHtml, dark, bodyRef, highlights = [], onHighlightClick }: ReaderBodyProps) {
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body || !contentHtml?.trim()) return;
+    applyHighlightMarks(body, highlights);
+    return () => clearHighlightMarks(body);
+  }, [bodyRef, contentHtml, highlights]);
+
+  // Membuka editor note ketika user mengklik mark yang sudah tersimpan di Reader.
+  function handleBodyClick(event: React.MouseEvent<HTMLElement>) {
+    if (!onHighlightClick) return;
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const mark = target.closest<HTMLElement>("mark[data-highlight-id]");
+    const highlightId = mark?.dataset.highlightId;
+    if (highlightId) onHighlightClick(highlightId);
+  }
+
   if (!contentHtml?.trim()) {
     return <EmptyState title="Konten belum tersedia" description="Artikel sudah tercatat, tetapi konten bersih belum tersedia untuk dibaca." />;
   }
@@ -157,6 +177,7 @@ export function ReaderBody({ contentHtml, dark, bodyRef }: ReaderBodyProps) {
   return (
     <article
       ref={bodyRef}
+      onClick={handleBodyClick}
       className={cn("prose prose-lg mt-10 max-w-none font-serif leading-8 sm:prose-xl", dark && "prose-invert")}
       dangerouslySetInnerHTML={{ __html: contentHtml }}
     />

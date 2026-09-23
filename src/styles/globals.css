@@ -35,6 +35,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .font-editorial { font-family: "Cormorant Garamond", Georgia, serif; }
 .text-balance { text-wrap: balance; }
 .page-enter { animation: page-enter 240ms ease-out; }
+.reader-highlight-mark {
+  background: color-mix(in srgb, var(--accent) 72%, transparent);
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--success) 70%, transparent);
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.12em;
+}
+.reader-highlight-mark:hover { background: color-mix(in srgb, var(--accent) 92%, transparent); }
 
 .skip-link {
   position: fixed; left: 0.75rem; top: 0.75rem; z-index: 100;

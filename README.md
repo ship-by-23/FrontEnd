@@ -33,6 +33,7 @@ npm test        # jalankan test sekali
 - `/search` — pencarian
 - `/tags` — direktori, create, rename, dan delete tag
 - `/tags/:tagId` — artikel pada tag dan detach relasi
+- `/highlights` — daftar highlight dan note dari seluruh artikel
 - `/settings/profile`, `/settings/appearance`, `/settings/security`, `/settings/bookmarklet` — pengaturan
 
 ## API
@@ -54,6 +55,11 @@ Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`).
 - `DELETE /tags/:tagId`
 - `PUT /articles/:articleId/tags/:tagId`
 - `DELETE /articles/:articleId/tags/:tagId`
+- `GET /highlights`
+- `GET /articles/:articleId/highlights`
+- `POST /articles/:articleId/highlights`
+- `PATCH /highlights/:highlightId`
+- `DELETE /highlights/:highlightId`
 
 Refresh session menggunakan cookie HTTP-only dengan `credentials: include`.
 

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import { BookOpen, BookmarkPlus, Library, LogOut, Menu, Search, Settings, Tags, X } from "lucide-react";
+import { BookOpen, BookmarkPlus, Highlighter, Library, LogOut, Menu, Search, Settings, Tags, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ const navigation = [
   { to: "/articles/new", label: "Simpan artikel", icon: BookmarkPlus },
   { to: "/search", label: "Pencarian", icon: Search },
   { to: "/tags", label: "Tag", icon: Tags },
+  { to: "/highlights", label: "Highlights", icon: Highlighter },
   { to: "/settings/profile", label: "Pengaturan", icon: Settings },
 ];
 
