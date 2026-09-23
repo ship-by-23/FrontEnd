@@ -46,6 +46,9 @@ Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`).
 - `GET /articles`
 - `POST /articles`
 - `GET /articles/:articleId`
+- `POST /articles/:articleId/retry`
 - `GET /tags`
 
 Refresh session menggunakan cookie HTTP-only dengan `credentials: include`.
+
+Save Article melakukan validasi URL dasar di browser, mengirim tag opsional jika dipilih, lalu memantau `pending`, `processing`, `completed`, atau `failed` dengan bounded polling. Progress extraction tidak dibuat di frontend.
