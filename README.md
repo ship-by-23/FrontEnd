@@ -30,6 +30,7 @@ npm test        # jalankan test sekali
 - `/library` — daftar artikel
 - `/articles/new` — simpan artikel
 - `/articles/:articleId` — reader
+- `/articles/:articleId/edit` — edit state user-controlled dan metadata read-only
 - `/search` — pencarian
 - `/tags` — direktori, create, rename, dan delete tag
 - `/tags/:tagId` — artikel pada tag dan detach relasi
@@ -48,6 +49,8 @@ Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`).
 - `GET /articles`
 - `POST /articles`
 - `GET /articles/:articleId`
+- `PATCH /articles/:articleId`
+- `DELETE /articles/:articleId`
 - `POST /articles/:articleId/retry`
 - `GET /tags`
 - `POST /tags`

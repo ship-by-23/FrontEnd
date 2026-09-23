@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ExternalLink, Moon, SlidersHorizontal, Sun } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, Moon, Pencil, SlidersHorizontal, Sun } from "lucide-react";
 import { useEffect, type RefObject } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, ErrorState } from "../../components/feedback/states";
@@ -9,6 +9,7 @@ import { applyHighlightMarks, clearHighlightMarks } from "../highlights/highligh
 import { getSafeReaderSourceUrl, type ReaderTheme } from "./reader-utils";
 
 type ReaderHeaderProps = {
+  articleId: string;
   theme: ReaderTheme;
   dark: boolean;
   isFinished: boolean;
@@ -19,6 +20,7 @@ type ReaderHeaderProps = {
 
 // Menyediakan kontrol navigasi, preference theme, dan aksi selesai pada shell Reader.
 export function ReaderHeader({
+  articleId,
   theme,
   dark,
   isFinished,
@@ -33,6 +35,10 @@ export function ReaderHeader({
         Library
       </Link>
       <div className="flex flex-wrap items-center justify-end gap-2">
+        <Link to={`/articles/${articleId}/edit`} className="inline-flex min-h-11 items-center gap-2 border border-current/25 px-3 text-sm font-semibold hover:bg-current/5">
+          <Pencil className="size-4" aria-hidden="true" />
+          Edit metadata
+        </Link>
         <ReaderPreferencesPopover theme={theme} onThemeChange={onThemeChange} />
         <MarkFinishedButton dark={dark} isFinished={isFinished} isPending={isMarkingFinished} onClick={onMarkFinished} />
       </div>
