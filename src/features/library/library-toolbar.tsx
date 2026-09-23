@@ -11,13 +11,13 @@ import {
   type LibraryUrlState,
 } from "./library-utils";
 
-type FilterName = "status" | "tagId" | "favorite" | "archived" | "sort";
+export type LibraryFilterName = "status" | "tagId" | "favorite" | "archived" | "sort";
 type FilterFieldsProps = {
   state: LibraryUrlState;
   tags: Tag[];
   tagsLoading: boolean;
   tagsError: boolean;
-  onChange: (name: FilterName, value: string) => void;
+  onChange: (name: LibraryFilterName, value: string) => void;
 };
 
 type LibraryToolbarProps = FilterFieldsProps & {
@@ -28,8 +28,8 @@ type LibraryToolbarProps = FilterFieldsProps & {
   onClearFilters: () => void;
 };
 
-// Menampilkan seluruh filter data Library dengan label yang tetap terlihat dan dapat digunakan keyboard.
-function FilterFields({ state, tags, tagsLoading, tagsError, onChange }: FilterFieldsProps) {
+// Menampilkan field filter yang sama untuk Library dan Search agar contract filter tetap konsisten.
+export function FilterFields({ state, tags, tagsLoading, tagsError, onChange }: FilterFieldsProps) {
   const favoriteValue: LibraryFavoriteFilter = state.favorite;
   const archivedValue: LibraryArchiveFilter = state.archived;
 

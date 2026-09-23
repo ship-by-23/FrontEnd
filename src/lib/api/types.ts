@@ -23,6 +23,7 @@ export type ArticleSummary = {
   title: string | null;
   description?: string | null;
   siteName?: string | null;
+  snippet?: string | null;
   author?: string | null;
   imageUrl?: string | null;
   estimatedReadingMinutes?: number | null;
