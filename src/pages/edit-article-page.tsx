@@ -18,6 +18,7 @@ import {
   type EditArticleValues,
 } from "../features/articles/edit-article-utils";
 import { getArticle, unwrapArticle } from "../features/articles/article-api";
+import { rememberArticleTagChange } from "../features/tags/article-tag-cache";
 import { attachArticleTag, detachArticleTag, getTags, unwrapTags } from "../features/tags/tags-api";
 import { getTagMutationErrorMessage } from "../features/tags/tags-utils";
 import { deleteArticle, updateArticle } from "../features/library/library-api";
@@ -139,6 +140,9 @@ export function EditArticlePage() {
     try {
       if (attached) await detachArticleTag(articleId, tagId);
       else await attachArticleTag(articleId, tagId);
+
+      const selectedTag = tags.find((tag) => tag.id === tagId);
+      if (selectedTag) rememberArticleTagChange(articleId, selectedTag, attached ? "detach" : "attach");
 
       setFormValues((current) => current ? {
         ...current,

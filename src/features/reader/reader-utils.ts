@@ -15,15 +15,15 @@ export function clampReadingProgress(value: number) {
 }
 
 // Menghitung progress berdasarkan rentang scroll artikel tanpa mengirim request dari event scroll.
-export function calculateReadingProgress(container: HTMLElement, scrollY: number, viewportHeight: number) {
+export function calculateReadingProgress(container: HTMLElement, scrollOffset: number, viewportHeight: number, viewportTop = 0) {
   const rect = container.getBoundingClientRect();
-  const start = rect.top + scrollY;
+  const start = rect.top - viewportTop + scrollOffset;
   const end = start + rect.height - viewportHeight;
 
   if (!Number.isFinite(start) || !Number.isFinite(end) || rect.height <= 0) return 0;
-  if (end <= start) return scrollY >= start ? 100 : 0;
+  if (end <= start) return scrollOffset >= start ? 100 : 0;
 
-  return clampReadingProgress(((scrollY - start) / (end - start)) * 100);
+  return clampReadingProgress(((scrollOffset - start) / (end - start)) * 100);
 }
 
 // Mengubah progress tersimpan menjadi posisi scroll untuk fallback ketika anchor tidak tersedia.
@@ -31,10 +31,11 @@ export function getScrollPositionForProgress(
   container: HTMLElement,
   progress: number,
   viewportHeight: number,
-  scrollY: number,
+  scrollOffset: number,
+  viewportTop = 0,
 ) {
   const rect = container.getBoundingClientRect();
-  const start = rect.top + scrollY;
+  const start = rect.top - viewportTop + scrollOffset;
   const end = start + rect.height - viewportHeight;
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return start;
 
@@ -55,15 +56,15 @@ export function findReaderAnchor(container: HTMLElement, anchor: string | null |
 }
 
 // Mengambil anchor terdekat dari viewport hanya jika HTML backend memang menyediakan anchor stabil.
-export function findVisibleReaderAnchor(container: HTMLElement, viewportHeight: number) {
+export function findVisibleReaderAnchor(container: HTMLElement, viewportHeight: number, viewportTop = 0) {
   const candidates = container.querySelectorAll<HTMLElement>("[id], [data-reader-anchor]");
   let closestAnchor: string | null = null;
   let closestDistance = Number.POSITIVE_INFINITY;
 
   for (const candidate of candidates) {
     const rect = candidate.getBoundingClientRect();
-    if (rect.bottom <= 0 || rect.top >= viewportHeight) continue;
-    const distance = Math.abs(rect.top);
+    if (rect.bottom <= viewportTop || rect.top >= viewportTop + viewportHeight) continue;
+    const distance = Math.abs(rect.top - viewportTop);
     if (distance >= closestDistance) continue;
 
     const anchor = candidate.dataset.readerAnchor ?? candidate.id;

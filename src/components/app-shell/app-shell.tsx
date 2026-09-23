@@ -103,7 +103,7 @@ export function AppShell() {
     <div className="min-h-screen lg:grid lg:h-screen lg:grid-cols-[260px_1fr] lg:overflow-hidden">
       <a href="#main-content" className="fixed left-3 top-3 z-50 -translate-y-20 bg-[var(--text)] px-4 py-2 text-[var(--surface)] focus:translate-y-0">Lewati ke konten</a>
       <aside className="hidden h-screen overflow-y-auto overscroll-contain border-r border-[var(--border)] bg-[var(--surface)] lg:block"><SidebarContent /></aside>
-      <div className="min-w-0 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
+      <div data-app-scroll-container className="min-w-0 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
         <header className="sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-[var(--border)] bg-[color:var(--cream)]/95 px-4 backdrop-blur-sm lg:px-8">
           <Button variant="ghost" className="px-3 lg:hidden" aria-label="Buka navigasi" aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(true)}><Menu aria-hidden="true" /></Button>
           <Link to="/library" aria-label="SimpanDulu — pustaka" className="lg:hidden"><Brand compact /></Link>

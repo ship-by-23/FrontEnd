@@ -91,7 +91,7 @@ function ReadingProgress({ article }: { article: ArticleSummary }) {
   );
 }
 
-// Mengirim quick action status, favorite, archive, atau delete dari satu kartu artikel.
+// Mengirim status baca lalu menempatkan seluruh quick action artikel pada baris di bawahnya.
 function ArticleActions({ article, actionPending, onUpdate, onDelete }: Omit<ArticleCardProps, "compact">) {
   // Mengirim status baca yang sudah dibatasi pada enum yang didukung backend.
   function handleStatusChange(value: string) {
@@ -100,55 +100,59 @@ function ArticleActions({ article, actionPending, onUpdate, onDelete }: Omit<Art
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2" aria-label={"Aksi untuk " + (article.title ?? "artikel tanpa judul")}>
-      <label className="sr-only" htmlFor={"article-status-" + article.id}>Status baca</label>
-      <Select
-        id={"article-status-" + article.id}
-        className="min-h-10 max-w-40 text-xs"
-        value={article.readingStatus}
-        disabled={actionPending}
-        onChange={(event) => handleStatusChange(event.target.value)}
-      >
-        <option value="unread">Belum dibaca</option>
-        <option value="reading">Sedang dibaca</option>
-        <option value="finished">Selesai</option>
-      </Select>
-      <Button
-        variant={article.isFavorite ? "secondary" : "ghost"}
-        className="size-11 px-0"
-        aria-label={article.isFavorite ? "Hapus dari favorit" : "Tambahkan ke favorit"}
-        aria-pressed={article.isFavorite}
-        disabled={actionPending}
-        onClick={() => onUpdate(article.id, { isFavorite: !article.isFavorite })}
-      >
-        <Heart className={cn("size-4", article.isFavorite && "fill-current")} aria-hidden="true" />
-      </Button>
-      <Button
-        variant="ghost"
-        className="size-11 px-0"
-        aria-label={article.isArchived ? "Keluarkan dari arsip" : "Arsipkan artikel"}
-        aria-pressed={article.isArchived}
-        disabled={actionPending}
-        onClick={() => onUpdate(article.id, { isArchived: !article.isArchived })}
-      >
-        {article.isArchived ? <ArchiveRestore className="size-4" aria-hidden="true" /> : <Archive className="size-4" aria-hidden="true" />}
-      </Button>
-      <Link
-        to={`/articles/${article.id}/edit`}
-        className="inline-flex size-11 items-center justify-center rounded-[3px] border border-transparent text-[var(--text)] hover:bg-[var(--surface-muted)]"
-        aria-label="Edit metadata artikel"
-      >
-        <Pencil className="size-4" aria-hidden="true" />
-      </Link>
-      <Button
-        variant="ghost"
-        className="size-11 px-0 text-[var(--danger)] hover:bg-[color:var(--danger)]/10"
-        aria-label="Hapus artikel"
-        disabled={actionPending}
-        onClick={() => onDelete(article)}
-      >
-        <Trash2 className="size-4" aria-hidden="true" />
-      </Button>
+    <div className="grid gap-2" aria-label={"Aksi untuk " + (article.title ?? "artikel tanpa judul")}>
+      <div>
+        <label className="sr-only" htmlFor={"article-status-" + article.id}>Status baca</label>
+        <Select
+          id={"article-status-" + article.id}
+          className="min-h-10 w-full text-xs sm:w-40"
+          value={article.readingStatus}
+          disabled={actionPending}
+          onChange={(event) => handleStatusChange(event.target.value)}
+        >
+          <option value="unread">Belum dibaca</option>
+          <option value="reading">Sedang dibaca</option>
+          <option value="finished">Selesai</option>
+        </Select>
+      </div>
+      <div className="flex flex-wrap items-center gap-2" aria-label="Aksi cepat artikel">
+        <Button
+          variant={article.isFavorite ? "secondary" : "ghost"}
+          className="size-11 px-0"
+          aria-label={article.isFavorite ? "Hapus dari favorit" : "Tambahkan ke favorit"}
+          aria-pressed={article.isFavorite}
+          disabled={actionPending}
+          onClick={() => onUpdate(article.id, { isFavorite: !article.isFavorite })}
+        >
+          <Heart className={cn("size-4", article.isFavorite && "fill-current")} aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          className="size-11 px-0"
+          aria-label={article.isArchived ? "Keluarkan dari arsip" : "Arsipkan artikel"}
+          aria-pressed={article.isArchived}
+          disabled={actionPending}
+          onClick={() => onUpdate(article.id, { isArchived: !article.isArchived })}
+        >
+          {article.isArchived ? <ArchiveRestore className="size-4" aria-hidden="true" /> : <Archive className="size-4" aria-hidden="true" />}
+        </Button>
+        <Link
+          to={`/articles/${article.id}/edit`}
+          className="inline-flex size-11 items-center justify-center rounded-[3px] border border-transparent text-[var(--text)] hover:bg-[var(--surface-muted)]"
+          aria-label="Edit metadata artikel"
+        >
+          <Pencil className="size-4" aria-hidden="true" />
+        </Link>
+        <Button
+          variant="ghost"
+          className="size-11 px-0 text-[var(--danger)] hover:bg-[color:var(--danger)]/10"
+          aria-label="Hapus artikel"
+          disabled={actionPending}
+          onClick={() => onDelete(article)}
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -186,7 +190,7 @@ export function ArticleCard({ article, compact, actionPending, onUpdate, onDelet
           ) : null}
         </div>
       </div>
-      <div className={cn("flex flex-wrap items-center justify-between gap-3 pt-5", compact && "sm:col-start-2 sm:row-start-1 sm:flex-col sm:items-end sm:justify-center sm:pt-0")}>
+      <div className={cn("grid gap-4 pt-5", compact && "sm:col-start-2 sm:row-start-1 sm:justify-items-end sm:pt-0")}>
         <div className="flex flex-wrap items-center gap-3">
           <ReadingStatusBadge article={article} />
           <ReadingProgress article={article} />
