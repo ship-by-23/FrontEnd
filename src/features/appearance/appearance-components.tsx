@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
+import { SettingsNavigation } from "../settings/settings-navigation";
 import { useAppearance } from "./appearance-provider";
 import {
   READER_FONT_CLASSES,
@@ -157,6 +158,7 @@ export function AppearanceSettings() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Pengaturan</p>
         <h1 className="font-editorial mt-1 text-5xl font-semibold">Tampilan</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Atur pengalaman membaca dan tampilan awal Library. Preference disimpan di browser ini sampai sinkronisasi antardevice memiliki contract resmi.</p>
+        <SettingsNavigation active="appearance" />
       </header>
 
       <div className="mt-8 grid gap-5">

@@ -70,7 +70,7 @@ export function readAppearancePreferences(storage: AppearanceStorage | null = ge
   if (!storage) return { ...DEFAULT_APPEARANCE_PREFERENCES };
 
   let storedValue: unknown;
-  let legacyTheme: string | null = null;
+  let legacyTheme: string | null;
   try {
     const rawValue = storage.getItem(APPEARANCE_STORAGE_KEY);
     storedValue = rawValue ? JSON.parse(rawValue) as unknown : undefined;

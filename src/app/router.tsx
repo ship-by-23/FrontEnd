@@ -17,6 +17,7 @@ const TagsPage = lazy(() => import("../pages/tags-page").then((module) => ({ def
 const HighlightsPage = lazy(() => import("../pages/highlights-page").then((module) => ({ default: module.HighlightsPage })));
 const TagDetailPage = lazy(() => import("../pages/tags-page").then((module) => ({ default: module.TagDetailPage })));
 const SettingsPage = lazy(() => import("../pages/simple-pages").then((module) => ({ default: module.SettingsPage })));
+const BookmarkletSettingsPage = lazy(() => import("../pages/bookmarklet-settings-page").then((module) => ({ default: module.BookmarkletSettingsPage })));
 const NotFoundPage = lazy(() => import("../pages/simple-pages").then((module) => ({ default: module.NotFoundPage })));
 
 // Menampilkan fallback stabil ketika bundle sebuah halaman dimuat pertama kali.
@@ -69,7 +70,7 @@ export const router = createBrowserRouter([
             { path: "/settings/profile", element: <LazyPage><SettingsPage section="profile" /></LazyPage> },
             { path: "/settings/appearance", element: <LazyPage><SettingsPage section="appearance" /></LazyPage> },
             { path: "/settings/security", element: <LazyPage><SettingsPage section="security" /></LazyPage> },
-            { path: "/settings/bookmarklet", element: <LazyPage><SettingsPage section="bookmarklet" /></LazyPage> },
+            { path: "/settings/bookmarklet", element: <LazyPage><BookmarkletSettingsPage /></LazyPage> },
           ],
         }],
       },
