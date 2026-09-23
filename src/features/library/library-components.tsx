@@ -51,6 +51,8 @@ function ArticleThumbnail({ article, compact }: { article: ArticleSummary; compa
     <img
       src={article.imageUrl}
       alt=""
+      width={compact ? 80 : 640}
+      height={compact ? 80 : 320}
       loading="lazy"
       referrerPolicy="no-referrer"
       onError={handleImageError}

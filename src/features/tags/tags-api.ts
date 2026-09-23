@@ -1,4 +1,5 @@
 import { apiRequest } from "../../lib/api/client";
+import { parseTagCollection } from "../../lib/api/contracts";
 import type { Pagination, Tag } from "../../lib/api/types";
 
 export type TagCollection = Tag[] | { data: Tag[]; pagination?: Pagination };
@@ -15,7 +16,7 @@ export type ArticleTagAction = {
 
 // Mengambil seluruh tag milik user aktif dari endpoint Tags resmi.
 export function getTags(signal?: AbortSignal) {
-  return apiRequest<TagCollection>("/tags", { signal });
+  return apiRequest<unknown>("/tags", { signal }).then(parseTagCollection);
 }
 
 // Membuat tag baru menggunakan nama yang akan dinormalisasi dan divalidasi backend.

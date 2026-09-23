@@ -11,7 +11,7 @@ import {
   unwrapArticle,
   type ReadingProgressInput,
 } from "../features/articles/article-api";
-import { getExtractionErrorMessage, getExtractionStatusLabel, isExtractionPending } from "../features/articles/article-utils";
+import { EXTRACTION_POLL_TIMEOUT_MS, getExtractionErrorMessage, getExtractionStatusLabel, isExtractionPending } from "../features/articles/article-utils";
 import {
   ArticleMetadata,
   ProgressSaveStatus,
@@ -43,6 +43,8 @@ export function ReaderPage() {
   const { theme, readerFont, textSize } = preferences;
   const [visualProgress, setVisualProgress] = useState(0);
   const [progressSaveState, setProgressSaveState] = useState<ProgressSaveState>("idle");
+  const [extractionPollingTimeoutKey, setExtractionPollingTimeoutKey] = useState<string | null>(null);
+  const [extractionPollingAttempt, setExtractionPollingAttempt] = useState(0);
   const readerContentRef = useRef<HTMLDivElement | null>(null);
   const readerBodyRef = useRef<HTMLElement | null>(null);
   const pendingProgressRef = useRef<ReadingProgressInput | null>(null);
@@ -55,6 +57,8 @@ export function ReaderPage() {
   const flushProgressRef = useRef<() => Promise<void>>(async () => undefined);
   const flushProgressNowRef = useRef<() => Promise<void>>(async () => undefined);
   const updateReadingProgressRef = useRef<() => void>(() => undefined);
+  const extractionPollingKey = articleId ? `${articleId}:${extractionPollingAttempt}` : null;
+  const extractionPollingTimedOut = extractionPollingKey !== null && extractionPollingTimeoutKey === extractionPollingKey;
 
   const articleQuery = useQuery({
     queryKey: ["article", articleId],
@@ -62,8 +66,9 @@ export function ReaderPage() {
     enabled: Boolean(articleId),
     refetchInterval: (query) => {
       const article = query.state.data ? unwrapArticle(query.state.data) : null;
-      return article && isExtractionPending(article.extractionStatus) ? 2_500 : false;
+      return !extractionPollingTimedOut && article && isExtractionPending(article.extractionStatus) ? 2_500 : false;
     },
+    refetchOnWindowFocus: false,
   });
 
   const finishMutation = useMutation({
@@ -79,12 +84,23 @@ export function ReaderPage() {
   const retryMutation = useMutation({
     mutationFn: () => retryArticle(articleId),
     onSuccess: async () => {
+      setExtractionPollingAttempt((current) => current + 1);
       await queryClient.invalidateQueries({ queryKey: ["article", articleId] });
       toast.success("Ekstraksi dimulai lagi.");
     },
   });
 
   const article = articleQuery.data ? unwrapArticle(articleQuery.data) : null;
+  const extractionStatus = article?.extractionStatus;
+
+  useEffect(() => {
+    if (!article?.id || !extractionPollingKey || !isExtractionPending(extractionStatus)) return;
+    const timeoutId = window.setTimeout(() => {
+      setExtractionPollingTimeoutKey(extractionPollingKey);
+    }, EXTRACTION_POLL_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [article?.id, extractionPollingKey, extractionStatus]);
 
   // Mengirim progress terbaru setelah interval throttle atau ketika browser perlu melakukan flush.
   async function flushProgress() {
@@ -169,6 +185,13 @@ export function ReaderPage() {
     updatePreferences({ theme: nextTheme });
   }
 
+  // Menghidupkan kembali polling extraction setelah batas pemantauan otomatis tercapai.
+  function resumeExtractionPolling() {
+    if (!article || !isExtractionPending(article.extractionStatus)) return;
+    setExtractionPollingAttempt((current) => current + 1);
+    void articleQuery.refetch();
+  }
+
   // Menunggu progress terakhir lalu mengirim mutation mark finished tanpa membiarkan queue lama menimpa progress 100.
   async function handleMarkFinished() {
     if (finishMutation.isPending || !articleId) return;
@@ -189,7 +212,7 @@ export function ReaderPage() {
 
     restoredArticleIdRef.current = article.id;
     currentAnchorRef.current = article.readingAnchor ?? null;
-    setVisualProgress(clampReadingProgress(article.readingProgress ?? 0));
+    setVisualProgress(article.readingStatus === "finished" ? 100 : clampReadingProgress(article.readingProgress ?? 0));
 
     const frameId = window.requestAnimationFrame(() => {
       const currentContainer = readerContentRef.current;
@@ -262,6 +285,16 @@ export function ReaderPage() {
   if (!article) return <ReaderErrorState message="Artikel tidak ditemukan atau respons server tidak lengkap." />;
 
   if (isExtractionPending(article.extractionStatus)) {
+    if (extractionPollingTimedOut) {
+      return (
+        <ReaderErrorState
+          title="Ekstraksi belum selesai"
+          message="Pemantauan otomatis dihentikan setelah beberapa saat. Kamu dapat mencoba memeriksa status artikel lagi."
+          onRetry={resumeExtractionPolling}
+        />
+      );
+    }
+
     return (
       <div className="mx-auto max-w-2xl">
         <LoadingState label={`${getExtractionStatusLabel(article.extractionStatus)}. Halaman akan diperbarui otomatis…`} />

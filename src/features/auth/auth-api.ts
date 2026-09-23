@@ -1,4 +1,5 @@
 import { apiRequest } from "../../lib/api/client";
+import { parseUserResponse } from "../../lib/api/contracts";
 import type { User } from "../../lib/api/types";
 
 export type AuthUserResponse = User | { data: User };
@@ -46,7 +47,7 @@ export function loginUser(input: LoginInput) {
 
 // Mengambil user aktif; api client menangani satu kali refresh jika session access expired.
 export function getCurrentUser() {
-  return apiRequest<AuthUserResponse>("/me");
+  return apiRequest<unknown>("/me").then(parseUserResponse);
 }
 
 // Memperbarui field profil yang didukung backend tanpa menyimpan response mentah sebagai state lokal.

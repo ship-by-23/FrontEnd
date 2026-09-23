@@ -1,4 +1,5 @@
 import { apiRequest } from "../../lib/api/client";
+import { parseHighlightCollection } from "../../lib/api/contracts";
 import type { Highlight, Pagination } from "../../lib/api/types";
 
 export type HighlightCollection = Highlight[] | {
@@ -22,12 +23,12 @@ export type UpdateHighlightInput = {
 // Mengambil seluruh highlight user dengan pagination yang kompatibel dengan collection API SimpanDulu.
 export function getHighlights(page: number, pageSize: number, signal?: AbortSignal) {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-  return apiRequest<HighlightCollection>(`/highlights?${params.toString()}`, { signal });
+  return apiRequest<unknown>(`/highlights?${params.toString()}`, { signal }).then(parseHighlightCollection);
 }
 
 // Mengambil highlight yang terhubung dengan artikel Reader aktif.
 export function getArticleHighlights(articleId: string, signal?: AbortSignal) {
-  return apiRequest<HighlightCollection>(`/articles/${encodeURIComponent(articleId)}/highlights`, { signal });
+  return apiRequest<unknown>(`/articles/${encodeURIComponent(articleId)}/highlights`, { signal }).then(parseHighlightCollection);
 }
 
 // Membuat highlight dengan quote, konteks, offset, dan note opsional dari selection Reader.

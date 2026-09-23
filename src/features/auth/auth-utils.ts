@@ -24,7 +24,7 @@ export function getSafeDestination(state: unknown): string {
   }
 
   try {
-    const origin = typeof window === "undefined" ? "http://localhost" : window.location.origin;
+    const origin = typeof window === "undefined" ? "https://simpandulu.invalid" : window.location.origin;
     const url = new URL(destination, origin);
     if (url.origin !== origin) return "/library";
     return `${url.pathname}${url.search}${url.hash}`;
