@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ExternalLink, Moon, Pencil, SlidersHorizontal, Sun } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, type RefObject } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, ErrorState } from "../../components/feedback/states";
@@ -8,26 +8,20 @@ import { cn, formatDate } from "../../lib/utils";
 import { READER_FONT_CLASSES, READER_TEXT_SIZE_CLASSES, type ReaderFont, type ReaderTextSize } from "../appearance/appearance-utils";
 import { applyHighlightMarks, clearHighlightMarks } from "../highlights/highlight-dom-utils";
 import { sanitizeArticleHtml } from "./article-html-sanitizer";
-import { getSafeReaderSourceUrl, type ReaderTheme } from "./reader-utils";
+import { getSafeReaderSourceUrl } from "./reader-utils";
 
 type ReaderHeaderProps = {
-  articleId: string;
-  theme: ReaderTheme;
   dark: boolean;
   isFinished: boolean;
   isMarkingFinished: boolean;
-  onThemeChange: (theme: ReaderTheme) => void;
   onMarkFinished: () => void;
 };
 
-// Menyediakan kontrol navigasi, preference theme, dan aksi selesai pada shell Reader.
+// Menyediakan kontrol navigasi dan aksi selesai pada shell Reader.
 export function ReaderHeader({
-  articleId,
-  theme,
   dark,
   isFinished,
   isMarkingFinished,
-  onThemeChange,
   onMarkFinished,
 }: ReaderHeaderProps) {
   return (
@@ -37,63 +31,9 @@ export function ReaderHeader({
         Library
       </Link>
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <Link to={`/articles/${articleId}/edit`} className="inline-flex min-h-11 items-center gap-2 border border-current/25 px-3 text-sm font-semibold hover:bg-current/5">
-          <Pencil className="size-4" aria-hidden="true" />
-          Edit metadata
-        </Link>
-        <ReaderPreferencesPopover theme={theme} onThemeChange={onThemeChange} />
         <MarkFinishedButton dark={dark} isFinished={isFinished} isPending={isMarkingFinished} onClick={onMarkFinished} />
       </div>
     </header>
-  );
-}
-
-type ReaderPreferencesPopoverProps = {
-  theme: ReaderTheme;
-  onThemeChange: (theme: ReaderTheme) => void;
-};
-
-// Menyediakan preference theme light/dark tanpa mengganti route Reader.
-export function ReaderPreferencesPopover({ theme, onThemeChange }: ReaderPreferencesPopoverProps) {
-  return (
-    <details className="relative">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 border border-current/25 px-3 text-sm font-semibold hover:bg-current/5 [&::-webkit-details-marker]:hidden">
-        <SlidersHorizontal className="size-4" aria-hidden="true" />
-        Tampilan
-      </summary>
-      <div className={cn(
-        "absolute right-0 z-30 mt-2 w-56 border border-current/25 p-4 shadow-[0.35rem_0.35rem_0_var(--accent)]",
-        theme === "dark" ? "bg-[var(--reader-dark-surface)] text-[var(--reader-dark-text)]" : "bg-[var(--surface)] text-[var(--text)]",
-      )}>
-        <fieldset>
-          <legend className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Tema Reader</legend>
-          <div className="mt-3 grid gap-2">
-            <label className="flex min-h-11 cursor-pointer items-center gap-3 border border-[var(--border-muted)] px-3 text-sm hover:bg-[var(--surface-muted)]">
-              <input
-                type="radio"
-                name="reader-theme"
-                value="light"
-                checked={theme === "light"}
-                onChange={() => onThemeChange("light")}
-              />
-              <Sun className="size-4" aria-hidden="true" />
-              Terang
-            </label>
-            <label className="flex min-h-11 cursor-pointer items-center gap-3 border border-[var(--border-muted)] px-3 text-sm hover:bg-[var(--surface-muted)]">
-              <input
-                type="radio"
-                name="reader-theme"
-                value="dark"
-                checked={theme === "dark"}
-                onChange={() => onThemeChange("dark")}
-              />
-              <Moon className="size-4" aria-hidden="true" />
-              Gelap
-            </label>
-          </div>
-        </fieldset>
-      </div>
-    </details>
   );
 }
 
@@ -183,7 +123,7 @@ export function ReaderBody({ contentHtml, dark, readerFont, textSize, bodyRef, h
   }
 
   if (!sanitizedContentHtml) {
-    return <EmptyState title="Konten belum tersedia" description="Artikel sudah tercatat, tetapi konten bersih belum tersedia untuk dibaca." />;
+    return <EmptyState title="Isi bacaan belum tersedia" description="Artikel sudah tercatat, tetapi isi bacaannya belum tersedia." />;
   }
 
   return (

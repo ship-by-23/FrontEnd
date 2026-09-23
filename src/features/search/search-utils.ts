@@ -40,7 +40,7 @@ export function getSearchErrorMessage(error: unknown) {
   if (error.status === 401) return "Sesi berakhir. Masuk kembali untuk mencari artikel.";
   if (error.status === 403) return "Kamu tidak memiliki izin untuk mencari artikel ini.";
   if (error.status === 404) return "Data pencarian tidak ditemukan.";
-  if (error.status >= 500) return "Server sedang mengalami kendala. Coba lagi beberapa saat.";
+  if (error.status >= 500) return "Layanan sedang mengalami kendala. Coba lagi beberapa saat.";
   return "Permintaan pencarian tidak dapat diproses. Coba lagi.";
 }
 

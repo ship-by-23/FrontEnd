@@ -23,7 +23,7 @@ export function ArticleReadonlyMetadata({ article }: ArticleReadonlyMetadataProp
     <section className="border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-8" aria-labelledby="article-readonly-heading">
       <div className="flex flex-col gap-3 border-b border-[var(--border-muted)] pb-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Metadata hasil ekstraksi</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Informasi artikel</p>
           <h2 id="article-readonly-heading" className="font-editorial mt-2 break-words text-4xl font-semibold leading-tight">
             {article.title ?? "Artikel tanpa judul"}
           </h2>
@@ -80,9 +80,6 @@ export function ArticleReadonlyMetadata({ article }: ArticleReadonlyMetadataProp
         </div>
       </dl>
 
-      <p className="mt-6 border-t border-[var(--border-muted)] pt-5 text-sm leading-6 text-[var(--text-muted)]">
-        Metadata ini berasal dari halaman sumber dan tetap read-only sampai backend menetapkan contract override untuk title, description, atau cover.
-      </p>
     </section>
   );
 }
@@ -178,9 +175,9 @@ export function EditArticleForm({
   return (
     <form className="border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-8" onSubmit={onSubmit} noValidate aria-busy={controlsDisabled}>
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">State yang dikontrol user</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Pengaturan artikel</p>
         <h2 className="font-editorial mt-2 text-4xl font-semibold">Kelola artikel</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Perubahan status, favorit, dan arsip disimpan melalui endpoint artikel. Perubahan tag disimpan saat tag dipilih.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Atur status, favorit, arsip, dan tag artikel sesuai kebutuhanmu.</p>
       </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
@@ -218,7 +215,7 @@ export function EditArticleForm({
             onToggle={onTagToggle}
           />
         ) : (
-          <p className="text-sm text-[var(--text-muted)]" role="status">Relasi tag belum tersedia pada detail artikel ini, jadi perubahan tag dinonaktifkan.</p>
+          <p className="text-sm text-[var(--text-muted)]" role="status">Tag belum tersedia untuk artikel ini.</p>
         )}
         {tagFeedback ? <p className="mt-3 text-sm text-[var(--text-muted)]" role="status" aria-live="polite">{tagFeedback}</p> : null}
       </div>
@@ -265,7 +262,7 @@ export function DeleteArticleDialog({ article, error, isPending, onClose, onConf
       open={Boolean(article)}
       title="Hapus artikel secara permanen?"
       titleId="edit-delete-article-dialog-title"
-      description="Artikel, relasi tag, highlight, catatan, dan data ekstraksinya akan ikut dihapus. Tindakan ini tidak dapat dibatalkan."
+      description="Artikel, tag, highlight, dan catatan akan ikut dihapus. Tindakan ini tidak dapat dibatalkan."
       onClose={onClose}
     >
       {article ? (

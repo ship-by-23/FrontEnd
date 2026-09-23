@@ -142,7 +142,7 @@ export function getLibraryErrorMessage(error: unknown) {
   if (error.status === 401) return "Sesi berakhir. Masuk kembali untuk membuka library.";
   if (error.status === 403) return "Kamu tidak memiliki izin untuk melihat artikel ini.";
   if (error.status === 404) return "Data library tidak ditemukan.";
-  if (error.status >= 500) return "Server sedang mengalami kendala. Coba lagi beberapa saat.";
+  if (error.status >= 500) return "Layanan sedang mengalami kendala. Coba lagi beberapa saat.";
   return "Permintaan library tidak dapat diproses. Coba lagi.";
 }
 
@@ -162,9 +162,9 @@ export function getReadingStatusLabel(status: ReadingStatus) {
 
 // Menentukan label status ekstraksi yang tidak membuat angka progress palsu.
 export function getExtractionStatusLabel(status: ArticleSummary["extractionStatus"]) {
-  if (status === "pending") return "Menunggu ekstraksi";
-  if (status === "processing") return "Sedang diekstrak";
-  if (status === "failed") return "Ekstraksi gagal";
+  if (status === "pending") return "Menunggu proses";
+  if (status === "processing") return "Sedang menyiapkan artikel";
+  if (status === "failed") return "Artikel belum siap";
   return "Artikel siap";
 }
 

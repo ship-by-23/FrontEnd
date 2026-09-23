@@ -50,10 +50,10 @@ export function getEditArticleLoadErrorMessage(error: unknown): string {
 
 // Mengubah error mutation artikel menjadi feedback singkat tanpa membocorkan detail server.
 export function getEditArticleMutationErrorMessage(error: unknown, action: "update" | "delete"): string {
-  if (!(error instanceof ApiError)) return "Server belum dapat dihubungi. Periksa koneksi lalu coba lagi.";
+  if (!(error instanceof ApiError)) return "Layanan belum dapat dihubungi. Periksa koneksi lalu coba lagi.";
   if (error.status === 401) return "Sesi berakhir. Masuk kembali untuk melanjutkan.";
   if (error.status === 403) return "Kamu tidak memiliki izin untuk mengubah artikel ini.";
   if (error.status === 404) return "Artikel tidak ditemukan atau sudah tidak tersedia.";
-  if (error.status >= 500) return action === "delete" ? "Artikel tidak dapat dihapus. Coba lagi." : "Server sedang mengalami kendala. Coba lagi beberapa saat.";
+  if (error.status >= 500) return action === "delete" ? "Artikel tidak dapat dihapus. Coba lagi." : "Layanan sedang mengalami kendala. Coba lagi beberapa saat.";
   return action === "delete" ? "Artikel tidak dapat dihapus. Coba lagi." : "Perubahan belum tersimpan. Coba lagi.";
 }

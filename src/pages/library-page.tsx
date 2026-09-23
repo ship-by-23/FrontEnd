@@ -292,7 +292,7 @@ export function LibraryPage() {
         open={Boolean(deleteTarget)}
         title="Hapus artikel secara permanen?"
         titleId="delete-article-dialog-title"
-        description="Artikel, relasi tag, highlight, catatan, dan data ekstraksinya akan ikut dihapus. Tindakan ini tidak dapat dibatalkan."
+        description="Artikel, tag, highlight, dan catatan akan ikut dihapus. Tindakan ini tidak dapat dibatalkan."
         onClose={() => {
           if (!deleteMutation.isPending) setDeleteTarget(null);
         }}

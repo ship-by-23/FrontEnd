@@ -139,7 +139,7 @@ function ArticleActions({ article, actionPending, onUpdate, onDelete }: Omit<Art
         <Link
           to={`/articles/${article.id}/edit`}
           className="inline-flex size-11 items-center justify-center rounded-[3px] border border-transparent text-[var(--text)] hover:bg-[var(--surface-muted)]"
-          aria-label="Edit metadata artikel"
+          aria-label="Edit artikel"
         >
           <Pencil className="size-4" aria-hidden="true" />
         </Link>

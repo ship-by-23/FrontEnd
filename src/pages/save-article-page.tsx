@@ -52,11 +52,11 @@ function ExtractionStatusPanel({
         <div className="min-w-0">
           <h2 className="font-semibold">{pollingHalted ? "Pemantauan berhenti" : getExtractionStatusLabel(status)}</h2>
           {failed ? <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{getExtractionErrorMessage(errorCode)}</p> : null}
-          {pollingHalted ? <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Status belum terminal dan pemantauan dihentikan sementara. Tidak ada progress buatan yang ditampilkan.</p> : null}
-          {isExtractionPending(status) && !pollingHalted ? <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Status akan diperbarui dari backend sampai proses selesai atau gagal.</p> : null}
+          {pollingHalted ? <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Proses belum selesai dan pemeriksaan dihentikan sementara. Kamu bisa mencoba lagi.</p> : null}
+          {isExtractionPending(status) && !pollingHalted ? <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Kami akan memeriksa kembali sampai artikel siap atau terjadi kendala.</p> : null}
           {pollingMessage ? <p className="mt-3 text-sm text-[var(--warning)]" role="status">{pollingMessage}</p> : null}
           <div className="mt-4 flex flex-wrap gap-3">
-            {failed ? <Button type="button" variant="secondary" disabled={isRetrying} onClick={onRetry}><RotateCcw className="size-4" aria-hidden="true" />{isRetrying ? "Mencoba lagi…" : "Coba ekstraksi lagi"}</Button> : null}
+            {failed ? <Button type="button" variant="secondary" disabled={isRetrying} onClick={onRetry}><RotateCcw className="size-4" aria-hidden="true" />{isRetrying ? "Mencoba lagi…" : "Siapkan lagi"}</Button> : null}
             {pollingHalted ? <Button type="button" variant="secondary" onClick={onResumePolling}><RotateCcw className="size-4" aria-hidden="true" />Pantau lagi</Button> : null}
           </div>
         </div>
@@ -162,7 +162,7 @@ export function SaveArticlePage() {
       if (remaining <= 0) {
         setPollingTimedOut(true);
         setPollingStopped(true);
-        setPollingMessage("Batas pemantauan tercapai. Kamu dapat memulai pemantauan lagi.");
+        setPollingMessage("Proses membutuhkan waktu lebih lama. Kamu dapat memeriksa lagi.");
         return;
       }
 

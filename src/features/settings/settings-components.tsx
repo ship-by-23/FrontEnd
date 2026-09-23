@@ -76,7 +76,7 @@ export function ProfileSettingsPanel() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Identitas akun</p>
           <h2 id="profile-form-title" className="font-editorial mt-2 text-4xl font-semibold">Profil</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Perubahan disimpan melalui session akun aktif dan tidak menggunakan data profil lokal sebagai sumber kebenaran.</p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Perbarui nama dan email yang digunakan pada akunmu.</p>
         </div>
         {user.role ? <p className="text-sm text-[var(--text-muted)]">Peran: <span className="font-semibold text-[var(--text)]">{user.role}</span></p> : null}
       </div>
@@ -170,16 +170,16 @@ export function SecuritySettingsPanel() {
     setLogoutError(null);
     const succeeded = await auth.logout();
     setLogoutPending(false);
-    if (!succeeded) setLogoutError("Session lokal sudah diakhiri, tetapi server belum dapat dihubungi.");
+    if (!succeeded) setLogoutError("Kamu sudah keluar dari perangkat ini. Silakan coba lagi jika akun masih terlihat.");
     navigate("/login", { replace: true });
   }
 
   return (
     <div className="grid gap-5">
       <section className="border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-8" aria-labelledby="password-form-title">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Credential</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Keamanan akun</p>
         <h2 id="password-form-title" className="font-editorial mt-2 text-4xl font-semibold">Ubah password</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Password saat ini diverifikasi backend. Credential hanya berada di form selama proses perubahan dan tidak disimpan ke browser.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Masukkan password saat ini untuk mengonfirmasi perubahan.</p>
 
         <form className="mt-8 grid gap-5" onSubmit={handleSubmit} noValidate aria-busy={mutation.isPending}>
           <Field label="Password saat ini" htmlFor="current-password" error={getFieldError("currentPassword")}>
@@ -227,9 +227,9 @@ export function SecuritySettingsPanel() {
       </section>
 
       <section className="border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-8" aria-labelledby="logout-title">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Session</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Akun</p>
         <h2 id="logout-title" className="font-editorial mt-2 text-4xl font-semibold">Keluar dari akun</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Logout mencabut session aktif melalui backend dan membersihkan cache data privat di aplikasi ini.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Keluar untuk mengakhiri akses akunmu di aplikasi ini.</p>
         {logoutError ? <p className="mt-4 text-sm text-[var(--warning)]" role="status">{logoutError}</p> : null}
         <Button className="mt-6" variant="secondary" disabled={logoutPending} onClick={() => void handleLogout()}>
           <LogOut className="size-4" aria-hidden="true" />{logoutPending ? "Keluar…" : "Keluar"}

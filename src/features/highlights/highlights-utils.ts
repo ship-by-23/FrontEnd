@@ -9,7 +9,7 @@ export function getHighlightListErrorMessage(error: unknown) {
   if (error.status === 401) return "Sesi berakhir. Masuk kembali untuk melihat highlight.";
   if (error.status === 403) return "Kamu tidak memiliki izin untuk melihat highlight ini.";
   if (error.status === 404) return "Daftar highlight tidak ditemukan.";
-  if (error.status >= 500) return "Server sedang mengalami kendala. Coba lagi beberapa saat.";
+  if (error.status >= 500) return "Layanan sedang mengalami kendala. Coba lagi beberapa saat.";
   return "Permintaan highlight tidak dapat diproses. Coba lagi.";
 }
 

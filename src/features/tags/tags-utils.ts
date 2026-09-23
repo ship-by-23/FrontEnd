@@ -13,13 +13,13 @@ export function getTagListErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return "Tag tidak dapat dimuat. Periksa koneksi lalu coba lagi.";
   if (error.status === 401) return "Sesi berakhir. Masuk kembali untuk melihat tag.";
   if (error.status === 403) return "Kamu tidak memiliki izin untuk melihat tag ini.";
-  if (error.status >= 500) return "Server sedang mengalami kendala. Coba lagi beberapa saat.";
+  if (error.status >= 500) return "Layanan sedang mengalami kendala. Coba lagi beberapa saat.";
   return "Tag tidak dapat dimuat. Coba lagi.";
 }
 
 // Mengubah error mutation Tags menjadi feedback yang sesuai dengan aksi user.
 export function getTagMutationErrorMessage(error: unknown, action: "create" | "rename" | "delete" | "attach" | "detach"): string {
-  if (!(error instanceof ApiError)) return "Server belum dapat dihubungi. Periksa koneksi lalu coba lagi.";
+  if (!(error instanceof ApiError)) return "Layanan belum dapat dihubungi. Periksa koneksi lalu coba lagi.";
   if (error.fields?.name) return error.fields.name;
 
   const normalizedCode = error.code.toUpperCase();
@@ -29,7 +29,7 @@ export function getTagMutationErrorMessage(error: unknown, action: "create" | "r
   if (error.status === 401) return "Sesi berakhir. Masuk kembali untuk melanjutkan.";
   if (error.status === 403) return "Kamu tidak memiliki izin untuk mengubah tag ini.";
   if (error.status === 404) return action === "delete" || action === "rename" ? "Tag tidak ditemukan atau sudah dihapus." : "Artikel atau tag tidak ditemukan.";
-  if (error.status >= 500) return "Server sedang mengalami kendala. Coba lagi beberapa saat.";
+  if (error.status >= 500) return "Layanan sedang mengalami kendala. Coba lagi beberapa saat.";
 
   if (action === "create") return "Tag belum dapat dibuat. Periksa nama lalu coba lagi.";
   if (action === "rename") return "Nama tag belum dapat diubah. Coba lagi.";
