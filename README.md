@@ -49,5 +49,3 @@ Base URL diatur melalui `VITE_API_URL` (contoh: `http://localhost:3000/api/v1`).
 - `GET /tags`
 
 Refresh session menggunakan cookie HTTP-only dengan `credentials: include`.
-
-Runtime tidak memakai data dummy. Saat database kosong, halaman menampilkan empty state; saat API bermasalah, pengguna mendapat pesan error dan opsi untuk mencoba lagi.
