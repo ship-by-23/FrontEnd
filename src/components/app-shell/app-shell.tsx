@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { BookOpen, BookmarkPlus, Library, LogOut, Menu, Search, Settings, Tags, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
+import { toast } from "sonner";
 import { useAuth } from "../../features/auth/auth-context";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
@@ -16,6 +17,13 @@ const navigation = [
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { user, logout } = useAuth();
+
+  // Mengakhiri session lokal dan memberi tahu user jika pencabutan server gagal.
+  async function handleLogout() {
+    const serverLogoutSucceeded = await logout();
+    if (!serverLogoutSucceeded) toast.error("Session lokal sudah diakhiri, tetapi server belum dapat dihubungi.");
+  }
+
   return (
     <div className="flex h-full flex-col">
       <Link to="/library" onClick={onNavigate} className="flex min-h-20 items-center gap-3 border-b border-[var(--border)] px-6">
@@ -40,7 +48,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="mt-auto border-t border-[var(--border)] p-4">
         <p className="truncate text-sm font-semibold">{user?.name}</p>
         <p className="truncate text-xs text-[var(--text-muted)]">{user?.email}</p>
-        <Button variant="ghost" className="mt-3 w-full justify-start" onClick={() => void logout()}>
+        <Button variant="ghost" className="mt-3 w-full justify-start" onClick={() => void handleLogout()}>
           <LogOut className="size-4" aria-hidden="true" />Keluar
         </Button>
       </div>

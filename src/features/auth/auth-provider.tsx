@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { queryClient } from "../../app/query-client";
-import { ApiError, apiRequest } from "../../lib/api/client";
+import { ApiError } from "../../lib/api/client";
 import type { User } from "../../lib/api/types";
-import { AuthContext, type AuthContextValue, type AuthState } from "./auth-context";
+import { AuthContext, type AuthContextValue, type AuthState, type SessionResult } from "./auth-context";
+import { getCurrentUser, logoutUser } from "./auth-api";
 
 type UserResponse = User | { data: User };
 
@@ -14,32 +15,43 @@ function unwrapUser(response: UserResponse) {
 // Menyediakan state session terpusat tanpa menyimpan token di localStorage.
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: "loading", user: null, error: null });
+  const sessionRequestId = useRef(0);
 
   const refresh = useCallback(async () => {
+    const requestId = ++sessionRequestId.current;
     setState({ status: "loading", user: null, error: null });
     try {
-      const response = await apiRequest<UserResponse>("/me");
+      const response: UserResponse = await getCurrentUser();
+      if (requestId !== sessionRequestId.current) return "unauthenticated" satisfies SessionResult;
       setState({ status: "authenticated", user: unwrapUser(response), error: null });
+      return "authenticated" satisfies SessionResult;
     } catch (error) {
+      if (requestId !== sessionRequestId.current) return "unauthenticated" satisfies SessionResult;
       if (error instanceof ApiError && error.status === 401) {
         setState({ status: "unauthenticated", user: null, error: null });
-        return;
+        return "unauthenticated" satisfies SessionResult;
       }
       setState({
         status: "error",
         user: null,
         error: error instanceof Error ? error : new Error("Sesi tidak dapat diperiksa."),
       });
+      return "error" satisfies SessionResult;
     }
   }, []);
 
   const logout = useCallback(async () => {
+    sessionRequestId.current += 1;
+    let serverLogoutSucceeded = true;
     try {
-      await apiRequest<void>("/auth/logout", { method: "POST", retryUnauthorized: false });
+      await logoutUser();
+    } catch {
+      serverLogoutSucceeded = false;
     } finally {
       queryClient.clear();
       setState({ status: "unauthenticated", user: null, error: null });
     }
+    return serverLogoutSucceeded;
   }, []);
 
   useEffect(() => {

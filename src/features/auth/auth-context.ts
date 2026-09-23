@@ -7,9 +7,11 @@ export type AuthState =
   | { status: "unauthenticated"; user: null; error: null }
   | { status: "error"; user: null; error: Error };
 
+export type SessionResult = Exclude<AuthState["status"], "loading">;
+
 export type AuthContextValue = AuthState & {
-  refresh: () => Promise<void>;
-  logout: () => Promise<void>;
+  refresh: () => Promise<SessionResult>;
+  logout: () => Promise<boolean>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
