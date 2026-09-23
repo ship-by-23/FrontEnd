@@ -32,7 +32,12 @@ export function registerUser(input: RegisterInput) {
   return apiRequest<unknown>("/auth/register", {
     method: "POST",
     retryUnauthorized: false,
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      name: input.name,
+      email: input.email,
+      password: input.password,
+      passwordConfirmation: input.confirmPassword,
+    }),
   });
 }
 
