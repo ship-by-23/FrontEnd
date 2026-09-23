@@ -10,6 +10,7 @@ import { LandingPage } from "../pages/landing-page";
 const AuthPage = lazy(() => import("../pages/auth-page").then((module) => ({ default: module.AuthPage })));
 const LibraryPage = lazy(() => import("../pages/library-page").then((module) => ({ default: module.LibraryPage })));
 const ReaderPage = lazy(() => import("../pages/reader-page").then((module) => ({ default: module.ReaderPage })));
+const EditArticlePage = lazy(() => import("../pages/edit-article-page").then((module) => ({ default: module.EditArticlePage })));
 const SaveArticlePage = lazy(() => import("../pages/save-article-page").then((module) => ({ default: module.SaveArticlePage })));
 const SearchPage = lazy(() => import("../pages/search-page").then((module) => ({ default: module.SearchPage })));
 const TagsPage = lazy(() => import("../pages/tags-page").then((module) => ({ default: module.TagsPage })));
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
           children: [
             { path: "/library", element: <LazyPage><LibraryPage /></LazyPage> },
             { path: "/articles/new", element: <LazyPage><SaveArticlePage /></LazyPage> },
+            { path: "/articles/:articleId/edit", element: <LazyPage><EditArticlePage /></LazyPage> },
             { path: "/articles/:articleId", element: <LazyPage><ReaderPage /></LazyPage> },
             { path: "/search", element: <LazyPage><SearchPage /></LazyPage> },
             { path: "/tags", element: <LazyPage><TagsPage /></LazyPage> },

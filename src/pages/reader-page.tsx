@@ -291,6 +291,7 @@ export function ReaderPage() {
       <ReadingProgressBar progress={visualProgress} dark={dark} />
       <div ref={readerContentRef} className="mx-auto max-w-3xl">
         <ReaderHeader
+          articleId={article.id}
           theme={theme}
           dark={dark}
           isFinished={article.readingStatus === "finished"}

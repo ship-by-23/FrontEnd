@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from "motion/react";
-import { Archive, ArchiveRestore, Heart, ImageOff, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Heart, ImageOff, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/button";
@@ -131,6 +131,13 @@ function ArticleActions({ article, actionPending, onUpdate, onDelete }: Omit<Art
       >
         {article.isArchived ? <ArchiveRestore className="size-4" aria-hidden="true" /> : <Archive className="size-4" aria-hidden="true" />}
       </Button>
+      <Link
+        to={`/articles/${article.id}/edit`}
+        className="inline-flex size-11 items-center justify-center rounded-[3px] border border-transparent text-[var(--text)] hover:bg-[var(--surface-muted)]"
+        aria-label="Edit metadata artikel"
+      >
+        <Pencil className="size-4" aria-hidden="true" />
+      </Link>
       <Button
         variant="ghost"
         className="size-11 px-0 text-[var(--danger)] hover:bg-[color:var(--danger)]/10"

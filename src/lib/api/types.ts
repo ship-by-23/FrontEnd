@@ -41,6 +41,7 @@ export type ArticleSummary = {
   extractionStatus: ExtractionStatus;
   extractionErrorCode?: string | null;
   createdAt: string;
+  updatedAt?: string | null;
   tags?: Tag[];
 };
 
