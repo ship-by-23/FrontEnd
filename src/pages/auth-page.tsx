@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
@@ -8,6 +8,7 @@ import { PasswordField } from "../components/ui/password-field";
 import { ThemeSwitch } from "../components/ui/theme-switch";
 import { useAuth } from "../features/auth/auth-context";
 import { loginUser, registerUser } from "../features/auth/auth-api";
+import { AuthVisualPanel } from "../features/auth/components/auth-visual-panel";
 import { getAuthErrorMessage, getAuthNotice, getSafeDestination, validateAuthForm, type AuthField, type AuthFormErrors, type AuthFormFields } from "../features/auth/auth-utils";
 import { ApiError } from "../lib/api/client";
 
@@ -87,11 +88,7 @@ export function AuthPage({ mode }: AuthPageProps) {
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
-      <section className="hidden border-r border-[var(--border)] bg-[var(--surface-muted)] p-12 lg:flex lg:flex-col lg:justify-between">
-        <Link to="/" className="flex items-center gap-2 font-editorial text-2xl font-semibold"><BookOpen aria-hidden="true" />SimpanDulu</Link>
-        <blockquote className="font-editorial max-w-xl text-5xl font-semibold leading-tight">“Bacaan terbaik tak harus diselesaikan pada saat ditemukan.”</blockquote>
-        <p className="text-sm text-[var(--text-muted)]">Pustaka pribadi untuk perhatian yang lebih terjaga.</p>
-      </section>
+      <AuthVisualPanel mode={mode} />
       <section className="flex items-center justify-center p-5 sm:p-10">
         <div className="w-full max-w-md">
           <div className="mb-12 flex items-center justify-between gap-4">
