@@ -23,10 +23,13 @@ import {
 } from "./highlights-utils";
 import { getReaderSelection, type ReaderSelection } from "./selection-utils";
 import { ReaderBody } from "../reader/reader-components";
+import type { ReaderFont, ReaderTextSize } from "../appearance/appearance-utils";
 
 type ReaderHighlightsProps = {
   article: Article;
   dark: boolean;
+  readerFont: ReaderFont;
+  textSize: ReaderTextSize;
   bodyRef: RefObject<HTMLElement | null>;
 };
 
@@ -36,7 +39,7 @@ type CreateHighlightVariables = {
 };
 
 // Mengelola query, selection toolbar, mutation, dan dialog highlight tanpa memindahkan tanggung jawab artikel ke Reader page.
-export function ReaderHighlights({ article, dark, bodyRef }: ReaderHighlightsProps) {
+export function ReaderHighlights({ article, dark, readerFont, textSize, bodyRef }: ReaderHighlightsProps) {
   const queryClient = useQueryClient();
   const [selection, setSelection] = useState<ReaderSelection | null>(null);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
@@ -178,6 +181,8 @@ export function ReaderHighlights({ article, dark, bodyRef }: ReaderHighlightsPro
       <ReaderBody
         contentHtml={article.contentHtml}
         dark={dark}
+        readerFont={readerFont}
+        textSize={textSize}
         bodyRef={bodyRef}
         highlights={highlights}
         onHighlightClick={handleHighlightClick}

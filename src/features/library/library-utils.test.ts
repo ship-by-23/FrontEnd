@@ -61,6 +61,11 @@ describe("library URL and cache utilities", () => {
     expect(toLibraryApiParams(state).query).toBeUndefined();
   });
 
+  it("memakai preference lokal sebagai default view ketika URL belum menentukan view", () => {
+    expect(parseLibrarySearchParams(new URLSearchParams(), "list").view).toBe("list");
+    expect(parseLibrarySearchParams(new URLSearchParams("view=grid"), "list").view).toBe("grid");
+  });
+
   it("menghapus item dari cache ketika optimistic status tidak lagi cocok dengan filter", () => {
     const state = parseLibrarySearchParams(new URLSearchParams("status=unread"));
     const updated = applyArticleUpdateToCollection(collection, article.id, { readingStatus: "finished" }, state);

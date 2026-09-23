@@ -11,6 +11,7 @@ import { deleteArticle, getLibraryArticles, updateArticle, type ArticleUpdateInp
 import { ArticleGrid, ArticleList } from "../features/library/library-components";
 import { LibraryToolbar } from "../features/library/library-toolbar";
 import { attachArticleTag, detachArticleTag, type ArticleTagAction } from "../features/tags/tags-api";
+import { useAppearance } from "../features/appearance/appearance-provider";
 import {
   applyArticleUpdateToCollection,
   findTagName,
@@ -101,9 +102,10 @@ function useLibraryArticleUpdate(
 // Menampilkan halaman Library dengan satu query dataset untuk seluruh kombinasi filter dan view.
 export function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { preferences, updatePreferences } = useAppearance();
   const [searchValue, setSearchValue] = useState(() => searchParams.get("query")?.trim() ?? "");
   const [deleteTarget, setDeleteTarget] = useState<ArticleSummary | null>(null);
-  const state = parseLibrarySearchParams(searchParams);
+  const state = parseLibrarySearchParams(searchParams, preferences.libraryView);
   const apiParams = toLibraryApiParams(state);
   const libraryQueryKey = ["articles", "library", apiParams] as const;
   const queryClient = useQueryClient();
@@ -208,6 +210,7 @@ export function LibraryPage() {
 
   // Mengubah mode grid/list tanpa mengubah dataset atau query API.
   function updateView(view: "grid" | "list") {
+    updatePreferences({ libraryView: view });
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
       next.set("view", view);

@@ -5,6 +5,7 @@ import { EmptyState, ErrorState } from "../../components/feedback/states";
 import { Button } from "../../components/ui/button";
 import type { Article, Highlight } from "../../lib/api/types";
 import { cn, formatDate } from "../../lib/utils";
+import { READER_FONT_CLASSES, READER_TEXT_SIZE_CLASSES, type ReaderFont, type ReaderTextSize } from "../appearance/appearance-utils";
 import { applyHighlightMarks, clearHighlightMarks } from "../highlights/highlight-dom-utils";
 import { getSafeReaderSourceUrl, type ReaderTheme } from "./reader-utils";
 
@@ -152,13 +153,15 @@ export function SourceLink({ href }: { href: string }) {
 type ReaderBodyProps = {
   contentHtml: string | null | undefined;
   dark: boolean;
+  readerFont: ReaderFont;
+  textSize: ReaderTextSize;
   bodyRef: RefObject<HTMLElement | null>;
   highlights?: Highlight[];
   onHighlightClick?: (highlightId: string) => void;
 };
 
 // Merender hanya HTML yang dijamin sudah disanitasi oleh backend pada contract artikel.
-export function ReaderBody({ contentHtml, dark, bodyRef, highlights = [], onHighlightClick }: ReaderBodyProps) {
+export function ReaderBody({ contentHtml, dark, readerFont, textSize, bodyRef, highlights = [], onHighlightClick }: ReaderBodyProps) {
   useEffect(() => {
     const body = bodyRef.current;
     if (!body || !contentHtml?.trim()) return;
@@ -184,7 +187,7 @@ export function ReaderBody({ contentHtml, dark, bodyRef, highlights = [], onHigh
     <article
       ref={bodyRef}
       onClick={handleBodyClick}
-      className={cn("prose prose-lg mt-10 max-w-none font-serif leading-8 sm:prose-xl", dark && "prose-invert")}
+      className={cn("prose mt-10 max-w-none leading-8", READER_FONT_CLASSES[readerFont], READER_TEXT_SIZE_CLASSES[textSize], dark && "prose-invert")}
       dangerouslySetInnerHTML={{ __html: contentHtml }}
     />
   );

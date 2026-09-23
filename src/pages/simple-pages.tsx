@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
+import { AppearanceSettings } from "../features/appearance/appearance-components";
 
 export function SettingsPage({ section }: { section: string }) {
+  if (section === "appearance") return <AppearanceSettings />;
+
   const content: Record<string, [string, string]> = {
     profile: ["Profil", "Perbarui identitas akun melalui API profil setelah kontrak field final tersedia."],
-    appearance: ["Tampilan", "Tema reader disimpan lokal pada browser ini. Sinkronisasi antardevice menunggu keputusan produk."],
     security: ["Keamanan", "Perubahan password dan pengelolaan sesi akan menggunakan kontrak autentikasi resmi."],
     bookmarklet: ["Bookmarklet", "Gunakan route /articles/new?url=… untuk mengisi URL tanpa menyimpan kredensial pada bookmarklet."],
   };
