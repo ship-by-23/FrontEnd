@@ -27,7 +27,13 @@ export type AuthSessionResponse = { data: AuthSession };
 export type ExtractionStatus = "pending" | "processing" | "completed" | "failed";
 export type ReadingStatus = "unread" | "reading" | "finished";
 
-export type Tag = { id: string; name: string };
+export type Tag = {
+  id: string;
+  name: string;
+  normalizedName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 export type ArticleSummary = {
   id: string;
@@ -36,6 +42,7 @@ export type ArticleSummary = {
   title: string | null;
   description?: string | null;
   siteName?: string | null;
+  snippet?: string | null;
   author?: string | null;
   publishedAt?: string | null;
   imageUrl?: string | null;
@@ -43,15 +50,15 @@ export type ArticleSummary = {
   estimatedReadingMinutes?: number | null;
   readingStatus: ReadingStatus;
   readingProgress?: number | null;
+  readingAnchor?: string | null;
   isFavorite: boolean;
   isArchived: boolean;
   extractionStatus: ExtractionStatus;
   extractionErrorCode?: string | null;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt?: string | null;
   finishedAt?: string | null;
   rank?: number | null;
-  snippet?: string | null;
   tags?: Tag[];
 };
 
@@ -59,7 +66,6 @@ export type Article = ArticleSummary & {
   submittedUrl: string;
   contentHtml?: string | null;
   contentText?: string | null;
-  readingAnchor?: string | null;
 };
 
 export type ArticleSubmission = {
@@ -79,4 +85,24 @@ export type Pagination = {
 export type ArticleCollection = {
   data: ArticleSummary[];
   pagination: Pagination;
+};
+
+export type HighlightArticleReference = {
+  id: string;
+  title?: string | null;
+  siteName?: string | null;
+};
+
+export type Highlight = {
+  id: string;
+  articleId: string;
+  quote: string;
+  prefix?: string | null;
+  suffix?: string | null;
+  startOffset?: number | null;
+  endOffset?: number | null;
+  note?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+  article?: HighlightArticleReference | null;
 };

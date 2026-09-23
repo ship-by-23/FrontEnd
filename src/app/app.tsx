@@ -1,8 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 import { Toaster } from "sonner";
-import { AuthProvider } from "../features/auth/auth-provider";
-import { ThemeProvider } from "../features/theme/theme-provider";
+import { AppearanceProvider } from "../features/appearance/appearance-provider";
 import { queryClient } from "./query-client";
 import { router } from "./router";
 
@@ -10,12 +9,10 @@ import { router } from "./router";
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <RouterProvider router={router} />
-          <Toaster position="bottom-right" richColors closeButton />
-        </AuthProvider>
-      </ThemeProvider>
+      <AppearanceProvider>
+        <RouterProvider router={router} />
+      </AppearanceProvider>
+      <Toaster position="bottom-right" richColors closeButton />
     </QueryClientProvider>
   );
 }

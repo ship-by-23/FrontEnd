@@ -15,8 +15,14 @@
     <script>
       (() => {
         try {
-          const saved = localStorage.getItem("simpandulu-theme");
-          const theme = saved === "light" || saved === "dark" ? saved : "light";
+          const savedTheme = localStorage.getItem("simpandulu-theme");
+          const appearance = JSON.parse(localStorage.getItem("simpandulu-appearance") || "null");
+          const appearanceTheme = appearance && typeof appearance.theme === "string" ? appearance.theme : null;
+          const theme = appearanceTheme === "light" || appearanceTheme === "dark"
+            ? appearanceTheme
+            : savedTheme === "light" || savedTheme === "dark"
+              ? savedTheme
+              : "light";
           document.documentElement.dataset.theme = theme;
           document.documentElement.style.colorScheme = theme;
           document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#191816" : "#f3f0e8");
@@ -28,6 +34,7 @@
   </head>
   <body>
     <div id="root"></div>
+    <script src="/runtime-config.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

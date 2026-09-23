@@ -1,5 +1,4 @@
-import { Eye, EyeOff } from "lucide-react";
-import { forwardRef, useState, type InputHTMLAttributes, type SelectHTMLAttributes } from "react";
+import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 import { cn } from "../../lib/utils";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
@@ -15,35 +14,6 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
       )}
       {...props}
     />
-  );
-});
-
-// Menyediakan input password dengan toggle visibilitas yang tetap mempertahankan focus.
-export const PasswordField = forwardRef<HTMLInputElement, Omit<InputHTMLAttributes<HTMLInputElement>, "type">>(function PasswordField(
-  { className, ...props },
-  ref,
-) {
-  const [showPassword, setShowPassword] = useState(false);
-
-  // Mengubah visibilitas password tanpa mengubah nilai field.
-  function handleTogglePassword() {
-    setShowPassword((current) => !current);
-  }
-
-  return (
-    <div className="relative">
-      <Input ref={ref} type={showPassword ? "text" : "password"} className={cn("pr-12", className)} {...props} />
-      <button
-        type="button"
-        className="absolute right-1 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-[3px] text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
-        aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-        aria-pressed={showPassword}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={handleTogglePassword}
-      >
-        {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
-      </button>
-    </div>
   );
 });
 
@@ -72,7 +42,7 @@ export function Field({
   label: string;
   htmlFor: string;
   error?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="grid gap-2">

@@ -1,145 +1,329 @@
-import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Grid2X2, Heart, List, Plus } from "lucide-react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import { EmptyState, ErrorState, LoadingState } from "../components/feedback/states";
-import { ReadingProgress } from "../components/reading/reading-progress";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BookOpen, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import { EmptyState, ErrorState } from "../components/feedback/states";
+import { Dialog } from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
-import { Select } from "../components/ui/form-controls";
-import { apiRequest } from "../lib/api/client";
-import type { ArticleCollection, ArticleSummary, ReadingStatus } from "../lib/api/types";
-import { getLocalTagsForArticle, useLocalTags } from "../lib/local-tags";
-import { getReadingStatus, normalizeProgress, readingStatusLabel, useLocalReadingProgress } from "../lib/reading-progress";
-import { cn, formatDate } from "../lib/utils";
+import { getTags, unwrapTags } from "../features/articles/article-api";
+import { deleteArticle, getLibraryArticles, updateArticle, type ArticleUpdateInput } from "../features/library/library-api";
+import { ArticleGrid, ArticleList } from "../features/library/library-components";
+import { LibraryToolbar } from "../features/library/library-toolbar";
+import { attachArticleTag, detachArticleTag, type ArticleTagAction } from "../features/tags/tags-api";
+import { useAppearance } from "../features/appearance/appearance-context";
+import {
+  applyArticleUpdateToCollection,
+  findTagName,
+  getLibraryErrorMessage,
+  getLibraryMutationErrorMessage,
+  hasActiveLibraryFilters,
+  parseLibrarySearchParams,
+  removeArticleFromCollection,
+  toLibraryApiParams,
+} from "../features/library/library-utils";
+import type { ArticleCollection, ArticleSummary } from "../lib/api/types";
 
-function getEffectiveStatus(article: ArticleSummary, localProgress?: ReturnType<typeof useLocalReadingProgress>[string]) {
-  return localProgress?.status ?? article.readingStatus ?? getReadingStatus(normalizeProgress(article.readingProgress));
-}
+type FilterName = "status" | "tagId" | "favorite" | "archived" | "sort";
 
-async function fetchArticles({
-  signal,
-  page,
-  tagId,
-  loadAll,
-}: {
-  signal: AbortSignal;
-  page: number;
-  tagId?: string;
-  loadAll: boolean;
-}) {
-  const pageSize = 20;
-  const baseParams = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-  if (tagId) baseParams.set("tagId", tagId);
-  const firstPage = await apiRequest<ArticleCollection>(`/articles?${baseParams}`, { signal });
-
-  // Status, favorit, dan tag perangkat bisa berubah di browser tanpa mengubah API.
-  // Saat filter lokal aktif, ambil seluruh halaman API agar artikel yang cocok tidak
-  // hilang hanya karena kebetulan berada di halaman pagination berikutnya.
-  if (!loadAll || firstPage.pagination.totalPages <= 1) return firstPage;
-
-  const remainingPages = await Promise.all(
-    Array.from({ length: firstPage.pagination.totalPages - 1 }, (_, index) => {
-      const params = new URLSearchParams({ page: String(index + 2), pageSize: String(pageSize) });
-      if (tagId) params.set("tagId", tagId);
-      return apiRequest<ArticleCollection>(`/articles?${params}`, { signal });
-    }),
-  );
-  const data = [firstPage, ...remainingPages].flatMap((collection) => collection.data);
-  return {
-    data,
-    pagination: { ...firstPage.pagination, page: 1, pageSize: data.length, totalItems: data.length, totalPages: 1 },
-  } satisfies ArticleCollection;
-}
-
-function ArticleCard({ article, compact, localTags, localProgress }: { article: ArticleSummary; compact: boolean; localTags: ReturnType<typeof useLocalTags>; localProgress: ReturnType<typeof useLocalReadingProgress> }) {
-  const pending = article.extractionStatus === "pending" || article.extractionStatus === "processing";
-  const localArticleProgress = localProgress[article.id];
-  const percent = localArticleProgress?.percent ?? normalizeProgress(article.readingProgress, article.readingStatus);
-  const status = getEffectiveStatus(article, localArticleProgress);
-  const tags = Array.from(new Set([...(article.tags ?? []).map((tag) => tag.name), ...getLocalTagsForArticle(localTags, article.id).map((tag) => tag.name)]));
+// Menjaga bentuk shell Library tetap stabil saat request awal sedang berjalan.
+function LibrarySkeleton() {
   return (
-    <article className={cn("group border border-[var(--border)] bg-[var(--surface)]", compact ? "grid gap-4 p-5 sm:grid-cols-[1fr_auto]" : "flex min-h-72 flex-col p-6")}>
-      <div>
-        <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
-          <span>{article.siteName ?? "Sumber artikel"}</span><span aria-hidden="true">•</span><span>{formatDate(article.createdAt)}</span>
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" role="status" aria-label="Memuat pustaka">
+      {Array.from({ length: 6 }, (_, index) => (
+        <div key={index} className="min-h-96 border border-[var(--border-muted)] bg-[var(--surface)] p-5" aria-hidden="true">
+          <div className="aspect-[16/8] animate-pulse bg-[var(--surface-muted)]" />
+          <div className="mt-6 h-3 w-1/3 animate-pulse bg-[var(--surface-muted)]" />
+          <div className="mt-4 h-8 w-4/5 animate-pulse bg-[var(--surface-muted)]" />
+          <div className="mt-3 h-4 w-full animate-pulse bg-[var(--surface-muted)]" />
+          <div className="mt-2 h-4 w-2/3 animate-pulse bg-[var(--surface-muted)]" />
         </div>
-        <h2 className="font-editorial text-2xl font-semibold leading-tight"><Link className="decoration-1 underline-offset-4 group-hover:underline" to={`/articles/${article.id}`}>{article.title ?? "Artikel sedang diproses"}</Link></h2>
-        {article.description ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-[var(--text-muted)]">{article.description}</p> : null}
-        {tags.length > 0 ? <div className="mt-4 flex flex-wrap gap-1.5">{tags.slice(0, 4).map((tag) => <span key={tag} className="rounded-full border border-[var(--border-muted)] px-2 py-1 text-[10px] font-semibold">{tag}</span>)}</div> : null}
-      </div>
-      <div className={cn("mt-auto pt-6", compact && "sm:mt-0 sm:pt-0")}>
-        {pending || article.extractionStatus === "failed" ? <span className="inline-flex border border-[var(--border-muted)] px-2 py-1 text-xs">{pending ? "Sedang diekstrak" : "Ekstraksi gagal"}</span> : <ReadingProgress percent={percent} status={status} compact />}
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
-        {article.isFavorite ? <span className="inline-flex items-center gap-1"><Heart className="size-3 fill-current" aria-hidden="true" /> Favorit</span> : null}
-        {article.estimatedReadingMinutes ? <span>{article.estimatedReadingMinutes} menit</span> : null}
-        </div>
-      </div>
-    </article>
+      ))}
+      <span className="sr-only">Memuat pustaka…</span>
+    </div>
   );
 }
 
+// Menampilkan kontrol pagination berdasarkan angka dari response backend, bukan jumlah item lokal saja.
+function LibraryPagination({
+  page,
+  pagination,
+  onPageChange,
+}: {
+  page: number;
+  pagination: ArticleCollection["pagination"];
+  onPageChange: (page: number) => void;
+}) {
+  if (pagination.totalPages <= 1) return null;
+
+  return (
+    <nav className="mt-8 flex flex-wrap items-center justify-center gap-3" aria-label="Pagination library">
+      <Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Sebelumnya</Button>
+      <span className="text-sm" aria-live="polite">Halaman {page} dari {pagination.totalPages} · {pagination.totalItems} artikel</span>
+      <Button variant="secondary" disabled={page >= pagination.totalPages} onClick={() => onPageChange(page + 1)}>Berikutnya</Button>
+    </nav>
+  );
+}
+
+// Menyimpan perubahan state artikel dengan optimistic update yang memiliki rollback aman.
+function useLibraryArticleUpdate(
+  queryClient: ReturnType<typeof useQueryClient>,
+  queryKey: readonly unknown[],
+  state: ReturnType<typeof parseLibrarySearchParams>,
+) {
+  return useMutation({
+    mutationFn: ({ articleId, input }: { articleId: string; input: ArticleUpdateInput }) => updateArticle(articleId, input),
+    onMutate: async ({ articleId, input }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<ArticleCollection>(queryKey);
+      if (previous) {
+        queryClient.setQueryData(queryKey, applyArticleUpdateToCollection(previous, articleId, input, state));
+      }
+      return { previous };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+      toast.error(getLibraryMutationErrorMessage(error, "update"));
+    },
+    onSuccess: (_result, variables) => {
+      const message = variables.input.isFavorite !== undefined
+        ? variables.input.isFavorite ? "Artikel ditambahkan ke favorit." : "Artikel dihapus dari favorit."
+        : variables.input.isArchived !== undefined
+          ? variables.input.isArchived ? "Artikel diarsipkan." : "Artikel dikeluarkan dari arsip."
+          : "Status baca diperbarui.";
+      toast.success(message);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["articles", "library"] });
+    },
+  });
+}
+
+// Menampilkan halaman Library dengan satu query dataset untuk seluruh kombinasi filter dan view.
 export function LibraryPage() {
-  const { tagId } = useParams<{ tagId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const status = searchParams.get("status") ?? "all";
-  const view = searchParams.get("view") === "list" ? "list" : "grid";
-  const page = Math.max(1, Number(searchParams.get("page") ?? 1));
-  const localTagId = searchParams.get("localTag");
-  const favoriteOnly = searchParams.get("favorite") === "1";
-  const localTags = useLocalTags();
-  const localProgress = useLocalReadingProgress();
-  const loadAllForLocalFilter = status !== "all" || favoriteOnly || Boolean(localTagId);
+  const { preferences, updatePreferences } = useAppearance();
+  const [searchValue, setSearchValue] = useState(() => searchParams.get("query")?.trim() ?? "");
+  const [deleteTarget, setDeleteTarget] = useState<ArticleSummary | null>(null);
+  const state = parseLibrarySearchParams(searchParams, preferences.libraryView);
+  const apiParams = toLibraryApiParams(state);
+  const libraryQueryKey = ["articles", "library", apiParams] as const;
+  const queryClient = useQueryClient();
 
-  const query = useQuery({
-    queryKey: ["articles", { status, page, tagId, localTagId, favoriteOnly }],
-    queryFn: ({ signal }) => fetchArticles({ signal, page, tagId, loadAll: loadAllForLocalFilter }),
+  const articlesQuery = useQuery({
+    queryKey: libraryQueryKey,
+    queryFn: ({ signal }) => getLibraryArticles(apiParams, signal),
   });
-  const articles = query.data?.data ?? [];
-  const visibleArticles = articles.filter((article) => {
-    const matchesStatus = status === "all" || getEffectiveStatus(article, localProgress[article.id]) === status;
-    const matchesLocalTag = !localTagId || getLocalTagsForArticle(localTags, article.id).some((tag) => tag.id === localTagId);
-    const matchesFavorite = !favoriteOnly || article.isFavorite;
-    return matchesStatus && matchesLocalTag && matchesFavorite;
+  const tagsQuery = useQuery({
+    queryKey: ["tags"],
+    queryFn: ({ signal }) => getTags(signal),
+  });
+  const updateMutation = useLibraryArticleUpdate(queryClient, libraryQueryKey, state);
+  const deleteMutation = useMutation({
+    mutationFn: (articleId: string) => deleteArticle(articleId),
+    onSuccess: (_result, articleId) => {
+      queryClient.setQueryData<ArticleCollection>(libraryQueryKey, (current) => current ? removeArticleFromCollection(current, articleId) : current);
+      setDeleteTarget(null);
+      toast.success("Artikel dihapus dari library.");
+    },
+    onError: (error) => {
+      toast.error(getLibraryMutationErrorMessage(error, "delete"));
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["articles", "library"] });
+    },
   });
 
-  // Menyimpan filter dan mode tampilan pada URL agar dapat dibagikan dan dipulihkan.
-  function updateParam(name: string, value: string) {
+  const tagMutation = useMutation({
+    mutationFn: ({ articleId, tagId, action }: ArticleTagAction) => action === "attach" ? attachArticleTag(articleId, tagId) : detachArticleTag(articleId, tagId),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["articles"] });
+    },
+  });
+
+  const tags = tagsQuery.data ? unwrapTags(tagsQuery.data) : [];
+  const hasFilters = hasActiveLibraryFilters(state);
+  const activeTagName = findTagName(tags, state.tagId);
+  const pendingUpdateArticleId = updateMutation.variables?.articleId;
+  const pendingDeleteArticleId = deleteMutation.variables;
+
+  // Menjalankan perubahan relasi tag dari quick action artikel dan mempertahankan error untuk picker.
+  async function handleTagChange(input: ArticleTagAction) {
+    return tagMutation.mutateAsync(input);
+  }
+
+  // Menjaga input pencarian lokal mengikuti URL ketika user memakai back-forward browser.
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => setSearchValue(state.query));
+    return () => window.cancelAnimationFrame(frameId);
+  }, [state.query]);
+
+  // Menunda perubahan query agar setiap karakter tidak langsung menghasilkan request full-text baru.
+  useEffect(() => {
+    const nextQuery = searchValue.trim();
+    if (nextQuery === state.query) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        if (nextQuery) next.set("query", nextQuery);
+        else next.delete("query");
+        next.delete("page");
+        return next;
+      }, { replace: true });
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchValue, setSearchParams, state.query]);
+
+  // Mengembalikan page ke batas backend setelah filter atau delete membuat page aktif tidak lagi valid.
+  useEffect(() => {
+    const totalPages = articlesQuery.data?.pagination.totalPages;
+    if (totalPages === undefined) return;
+    if (totalPages === 0 && state.page !== 1) {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        next.delete("page");
+        return next;
+      }, { replace: true });
+      return;
+    }
+    if (totalPages > 0 && state.page > totalPages) {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        next.set("page", String(totalPages));
+        return next;
+      }, { replace: true });
+    }
+  }, [articlesQuery.data?.pagination.totalPages, setSearchParams, state.page]);
+
+  // Menulis satu filter ke URL dan mereset pagination agar hasil baru dimulai dari page pertama.
+  function updateFilter(name: FilterName, value: string) {
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
-      next.set(name, value);
-      if (name === "status" || name === "favorite" || name === "localTag") next.delete("page");
+      if (value) next.set(name, value);
+      else next.delete(name);
+      next.delete("page");
       return next;
     });
   }
 
-  const emptyTitle = localTagId
-    ? "Belum ada artikel dengan tag ini"
-    : favoriteOnly
-      ? "Belum ada buku favorit"
-      : status !== "all"
-        ? `Belum ada artikel ${readingStatusLabel(status as ReadingStatus).toLocaleLowerCase("id-ID")}`
-        : "Pustakamu masih kosong";
-  const emptyDescription = localTagId
-    ? "Tambahkan tag ini dari halaman reader artikel."
-    : favoriteOnly
-      ? "Artikel yang ditandai favorit dari akun akan tampil di sini."
-      : status !== "all"
-        ? "Progress pada card dan filter status sekarang menggunakan status efektif yang terlihat di frontend."
-        : "Simpan artikel pertama untuk mulai membangun ruang baca pribadimu.";
+  // Mengubah mode grid/list tanpa mengubah dataset atau query API.
+  function updateView(view: "grid" | "list") {
+    updatePreferences({ libraryView: view });
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set("view", view);
+      return next;
+    });
+  }
+
+  // Menghapus filter data dari URL tetapi mempertahankan mode tampilan yang dipilih user.
+  function clearFilters() {
+    setSearchValue("");
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      ["status", "tagId", "favorite", "archived", "sort", "query", "page"].forEach((name) => next.delete(name));
+      return next;
+    });
+  }
+
+  // Mengubah nomor page dengan tetap mempertahankan seluruh filter yang sedang aktif.
+  function changePage(page: number) {
+    if (page < 1) return;
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set("page", String(page));
+      return next;
+    });
+  }
+
+  // Mengirim quick action artikel dan mencegah duplicate submit ketika mutation sedang berjalan.
+  function handleArticleUpdate(articleId: string, input: ArticleUpdateInput) {
+    if (updateMutation.isPending || deleteMutation.isPending) return;
+    updateMutation.mutate({ articleId, input });
+  }
+
+  // Membuka confirmation dialog sebelum operasi delete permanen dilakukan.
+  function requestDelete(article: ArticleSummary) {
+    if (updateMutation.isPending || deleteMutation.isPending) return;
+    setDeleteTarget(article);
+  }
+
+  // Mengonfirmasi delete setelah user melihat judul artikel yang akan dihapus.
+  function confirmDelete() {
+    if (!deleteTarget || deleteMutation.isPending) return;
+    deleteMutation.mutate(deleteTarget.id);
+  }
+
+  const emptyTitle = hasFilters ? "Tidak ada artikel yang cocok" : "Pustakamu masih kosong";
+  const emptyDescription = hasFilters
+    ? activeTagName ? "Tidak ada artikel pada tag " + activeTagName + " dengan kombinasi filter saat ini." : "Coba ubah filter, sort, atau kata pencarian."
+    : "Simpan artikel pertama untuk mulai membangun ruang baca pribadimu.";
 
   return (
     <div>
       <header className="flex flex-col gap-5 border-b border-[var(--border)] pb-7 sm:flex-row sm:items-end sm:justify-between">
-        <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Pustaka pribadi</p><h1 className="font-editorial mt-1 text-5xl font-semibold">Library</h1></div>
-        <Link to="/articles/new" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[3px] border border-[var(--border)] bg-[var(--text)] px-4 text-sm font-semibold text-[var(--surface)]"><Plus className="size-4" aria-hidden="true" />Simpan artikel</Link>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Pustaka pribadi</p>
+          <h1 className="font-editorial mt-1 text-5xl font-semibold">Library</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Satu ruang untuk artikel yang ingin kamu baca, kelola, dan temukan kembali.</p>
+        </div>
+        <Link to="/articles/new" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[3px] border border-[var(--border)] bg-[var(--text)] px-4 text-sm font-semibold text-white">
+          <Plus className="size-4" aria-hidden="true" />Simpan artikel
+        </Link>
       </header>
-      <div className="my-6 flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-2 text-sm font-semibold">Status <Select value={status} onChange={(event) => updateParam("status", event.target.value)}><option value="all">Semua</option>{(["unread", "reading", "finished"] satisfies ReadingStatus[]).map((value) => <option key={value} value={value}>{value === "unread" ? "Belum dibaca" : value === "reading" ? "Sedang dibaca" : "Selesai"}</option>)}</Select></label>
-        <div className="flex border border-[var(--border)]" aria-label="Mode tampilan"><Button className="rounded-none border-0 px-3" variant={view === "grid" ? "primary" : "ghost"} aria-label="Tampilan grid" aria-pressed={view === "grid"} onClick={() => updateParam("view", "grid")}><Grid2X2 className="size-4" /></Button><Button className="rounded-none border-0 px-3" variant={view === "list" ? "primary" : "ghost"} aria-label="Tampilan list" aria-pressed={view === "list"} onClick={() => updateParam("view", "list")}><List className="size-4" /></Button></div>
-      </div>
-      {query.isPending ? <LoadingState label="Memuat pustaka…" /> : query.isError ? <ErrorState message={query.error instanceof Error ? query.error.message : "Pustaka tidak dapat dimuat."} onRetry={() => void query.refetch()} /> : visibleArticles.length === 0 ? <EmptyState title={emptyTitle} description={emptyDescription} action={!localTagId && !favoriteOnly && status === "all" ? <Link to="/articles/new" className="inline-flex min-h-11 items-center gap-2 border border-[var(--border)] bg-[var(--text)] px-4 text-sm font-semibold text-[var(--surface)]"><BookOpen className="size-4" />Simpan artikel pertama</Link> : undefined} /> : (
-        <><div className={cn("grid gap-4", view === "grid" && "md:grid-cols-2 xl:grid-cols-3")}>{visibleArticles.map((article) => <ArticleCard key={article.id} article={article} compact={view === "list"} localTags={localTags} localProgress={localProgress} />)}</div>
-        {!localTagId && query.data.pagination.totalPages > 1 ? <nav className="mt-8 flex items-center justify-center gap-3" aria-label="Pagination"><Button variant="secondary" disabled={page <= 1} onClick={() => updateParam("page", String(page - 1))}>Sebelumnya</Button><span className="text-sm">Halaman {page} dari {query.data.pagination.totalPages}</span><Button variant="secondary" disabled={page >= query.data.pagination.totalPages} onClick={() => updateParam("page", String(page + 1))}>Berikutnya</Button></nav> : null}</>
+
+      <LibraryToolbar
+        state={state}
+        tags={tags}
+        tagsLoading={tagsQuery.isPending}
+        tagsError={tagsQuery.isError}
+        searchValue={searchValue}
+        hasActiveFilters={hasFilters}
+        onSearchChange={setSearchValue}
+        onChange={updateFilter}
+        onViewChange={updateView}
+        onClearFilters={clearFilters}
+      />
+
+      {articlesQuery.isFetching && articlesQuery.data ? <p className="mb-4 text-sm text-[var(--text-muted)]" role="status">Memperbarui hasil library…</p> : null}
+      {articlesQuery.isPending ? <LibrarySkeleton /> : articlesQuery.isError ? <ErrorState message={getLibraryErrorMessage(articlesQuery.error)} onRetry={() => void articlesQuery.refetch()} /> : articlesQuery.data.data.length === 0 ? (
+        <EmptyState
+          title={emptyTitle}
+          description={emptyDescription}
+          action={hasFilters
+            ? <Button variant="secondary" onClick={clearFilters}>Bersihkan filter</Button>
+            : <Link to="/articles/new" className="inline-flex min-h-11 items-center gap-2 border border-[var(--border)] bg-[var(--text)] px-4 text-sm font-semibold text-white"><BookOpen className="size-4" aria-hidden="true" />Simpan artikel pertama</Link>}
+        />
+      ) : (
+        <>
+          {state.view === "grid"
+            ? <ArticleGrid articles={articlesQuery.data.data} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId || tagMutation.isPending)} onUpdate={handleArticleUpdate} onDelete={requestDelete} availableTags={tags} tagsLoading={tagsQuery.isPending} tagsError={tagsQuery.error} onTagChange={handleTagChange} />
+            : <ArticleList articles={articlesQuery.data.data} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId || tagMutation.isPending)} onUpdate={handleArticleUpdate} onDelete={requestDelete} availableTags={tags} tagsLoading={tagsQuery.isPending} tagsError={tagsQuery.error} onTagChange={handleTagChange} />}
+          <LibraryPagination page={state.page} pagination={articlesQuery.data.pagination} onPageChange={changePage} />
+        </>
       )}
+
+      <Dialog
+        open={Boolean(deleteTarget)}
+        title="Hapus artikel secara permanen?"
+        titleId="delete-article-dialog-title"
+        description="Artikel, relasi tag, highlight, catatan, dan data ekstraksinya akan ikut dihapus. Tindakan ini tidak dapat dibatalkan."
+        onClose={() => {
+          if (!deleteMutation.isPending) setDeleteTarget(null);
+        }}
+      >
+        {deleteTarget ? (
+          <div>
+            <p className="break-words border-l-2 border-[var(--danger)] pl-3 font-semibold">{deleteTarget.title ?? "Artikel tanpa judul"}</p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <Button variant="ghost" disabled={deleteMutation.isPending} onClick={() => setDeleteTarget(null)}>Batal</Button>
+              <Button variant="danger" disabled={deleteMutation.isPending} onClick={confirmDelete}>{deleteMutation.isPending ? "Menghapus…" : "Hapus permanen"}</Button>
+            </div>
+          </div>
+        ) : null}
+      </Dialog>
     </div>
   );
 }

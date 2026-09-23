@@ -1,6 +1,8 @@
 import { getAppConfig } from "../config";
 import type { ApiErrorPayload, AuthSessionResponse } from "./types";
 
+export const SESSION_EXPIRED_EVENT = "simpandulu:session-expired";
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -19,6 +21,11 @@ let accessToken: string | null = null;
 // Menyimpan access token hanya di memory browser; refresh token tetap dikelola oleh cookie HTTP-only backend.
 export function setAccessToken(token: string | null) {
   accessToken = token;
+}
+
+// Memberi tahu AuthProvider bahwa refresh gagal sehingga route privat dapat kembali ke login.
+function announceSessionExpired() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
 }
 
 // Membaca body JSON jika tersedia tanpa menutupi status HTTP asli.
@@ -81,8 +88,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   });
 
   const mayRefresh = options.retryUnauthorized !== false && !path.startsWith("/auth/");
-  if (response.status === 401 && mayRefresh && (await refreshSession())) {
-    return apiRequest<T>(path, { ...options, retryUnauthorized: false });
+  if (response.status === 401 && mayRefresh) {
+    if (await refreshSession()) return apiRequest<T>(path, { ...options, retryUnauthorized: false });
+    announceSessionExpired();
   }
   if (!response.ok) throw await toApiError(response);
   return (await readJson(response)) as T;
