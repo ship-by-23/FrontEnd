@@ -63,7 +63,7 @@ export function validateAuthForm(fields: AuthFormFields, mode: AuthMode): AuthFo
 export function getAuthErrorMessage(error: unknown, mode: AuthMode): string {
   if (!(error instanceof ApiError)) return "Server belum dapat dihubungi. Coba lagi.";
   if (error.status === 401 || error.status === 403) return "Email atau password tidak dapat digunakan.";
-  if (error.status === 422) return mode === "register" ? "Periksa kembali data pendaftaran." : "Periksa kembali data yang dimasukkan.";
+  if (error.status === 400 || error.status === 422) return mode === "register" ? "Periksa kembali data pendaftaran." : "Periksa kembali data yang dimasukkan.";
   if (error.status === 429) return "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.";
   return "Permintaan autentikasi tidak dapat diproses. Coba lagi.";
 }

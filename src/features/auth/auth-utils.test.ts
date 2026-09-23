@@ -30,4 +30,8 @@ describe("auth utilities", () => {
   it("menggunakan pesan login generik untuk error credential", () => {
     expect(getAuthErrorMessage(new ApiError("detail internal", 401), "login")).toBe("Email atau password tidak dapat digunakan.");
   });
+
+  it("menampilkan pesan validasi pendaftaran untuk error 400 dari backend", () => {
+    expect(getAuthErrorMessage(new ApiError("The request could not be processed.", 400, "VALIDATION_ERROR"), "register")).toBe("Periksa kembali data pendaftaran.");
+  });
 });
