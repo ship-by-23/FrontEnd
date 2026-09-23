@@ -3,9 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f3f0e8" />
-    <meta name="description" content="Simpan artikel penting, baca tanpa gangguan, lanjutkan dari posisi terakhir, dan temukan kembali gagasan di dalamnya." />
-    <title>SimpanDulu — Simpan sekarang, baca saat pikiran siap</title>
+    <meta name="description" content="Simpan artikel, tutorial, dan dokumentasi untuk dibaca nanti. Kelola status baca, cari isi artikel, dan simpan highlight dalam satu library pribadi." />
+    <meta property="og:title" content="SimpanDulu — Simpan Artikel, Baca Nanti" />
+    <meta property="og:description" content="Simpan artikel, tutorial, dan dokumentasi untuk dibaca nanti dalam satu library pribadi." />
+    <meta property="og:image" content="/brand/simpandulu-wordmark.png" />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/png" href="/brand/simpandulu-logo.png" />
+    <title>SimpanDulu — Simpan Artikel, Baca Nanti</title>
+    <script>
+      (() => {
+        try {
+          const savedTheme = localStorage.getItem("simpandulu-theme");
+          const appearance = JSON.parse(localStorage.getItem("simpandulu-appearance") || "null");
+          const appearanceTheme = appearance && typeof appearance.theme === "string" ? appearance.theme : null;
+          const theme = appearanceTheme === "light" || appearanceTheme === "dark"
+            ? appearanceTheme
+            : savedTheme === "light" || savedTheme === "dark"
+              ? savedTheme
+              : "light";
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+          document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#191816" : "#f3f0e8");
+        } catch {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

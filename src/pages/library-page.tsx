@@ -10,6 +10,7 @@ import { getTags, unwrapTags } from "../features/articles/article-api";
 import { deleteArticle, getLibraryArticles, updateArticle, type ArticleUpdateInput } from "../features/library/library-api";
 import { ArticleGrid, ArticleList } from "../features/library/library-components";
 import { LibraryToolbar } from "../features/library/library-toolbar";
+import { mergeCachedArticleTags, rememberArticleTagChange } from "../features/tags/article-tag-cache";
 import { attachArticleTag, detachArticleTag, type ArticleTagAction } from "../features/tags/tags-api";
 import { useAppearance } from "../features/appearance/appearance-context";
 import {
@@ -103,7 +104,6 @@ function useLibraryArticleUpdate(
 export function LibraryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { preferences, updatePreferences } = useAppearance();
-  const [searchValue, setSearchValue] = useState(() => searchParams.get("query")?.trim() ?? "");
   const [deleteTarget, setDeleteTarget] = useState<ArticleSummary | null>(null);
   const state = parseLibrarySearchParams(searchParams, preferences.libraryView);
   const apiParams = toLibraryApiParams(state);
@@ -134,15 +134,25 @@ export function LibraryPage() {
     },
   });
 
+  const tags = tagsQuery.data ? unwrapTags(tagsQuery.data) : [];
+
   const tagMutation = useMutation({
     mutationFn: ({ articleId, tagId, action }: ArticleTagAction) => action === "attach" ? attachArticleTag(articleId, tagId) : detachArticleTag(articleId, tagId),
+    onSuccess: (_result, variables) => {
+      const selectedTag = tags.find((tag) => tag.id === variables.tagId);
+      if (selectedTag) rememberArticleTagChange(variables.articleId, selectedTag, variables.action);
+      queryClient.setQueriesData<ArticleCollection>({ queryKey: ["articles"] }, (current) => current ? {
+        ...current,
+        data: current.data.map((article) => article.id === variables.articleId ? mergeCachedArticleTags(article, tags) : article),
+      } : current);
+    },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["articles"] });
     },
   });
 
-  const tags = tagsQuery.data ? unwrapTags(tagsQuery.data) : [];
   const hasFilters = hasActiveLibraryFilters(state);
+  const visibleArticles = articlesQuery.data?.data.map((article) => mergeCachedArticleTags(article, tags)) ?? [];
   const activeTagName = findTagName(tags, state.tagId);
   const pendingUpdateArticleId = updateMutation.variables?.articleId;
   const pendingDeleteArticleId = deleteMutation.variables;
@@ -151,30 +161,6 @@ export function LibraryPage() {
   async function handleTagChange(input: ArticleTagAction) {
     return tagMutation.mutateAsync(input);
   }
-
-  // Menjaga input pencarian lokal mengikuti URL ketika user memakai back-forward browser.
-  useEffect(() => {
-    const frameId = window.requestAnimationFrame(() => setSearchValue(state.query));
-    return () => window.cancelAnimationFrame(frameId);
-  }, [state.query]);
-
-  // Menunda perubahan query agar setiap karakter tidak langsung menghasilkan request full-text baru.
-  useEffect(() => {
-    const nextQuery = searchValue.trim();
-    if (nextQuery === state.query) return;
-
-    const timeoutId = window.setTimeout(() => {
-      setSearchParams((current) => {
-        const next = new URLSearchParams(current);
-        if (nextQuery) next.set("query", nextQuery);
-        else next.delete("query");
-        next.delete("page");
-        return next;
-      }, { replace: true });
-    }, 250);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [searchValue, setSearchParams, state.query]);
 
   // Mengembalikan page ke batas backend setelah filter atau delete membuat page aktif tidak lagi valid.
   useEffect(() => {
@@ -220,7 +206,6 @@ export function LibraryPage() {
 
   // Menghapus filter data dari URL tetapi mempertahankan mode tampilan yang dipilih user.
   function clearFilters() {
-    setSearchValue("");
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
       ["status", "tagId", "favorite", "archived", "sort", "query", "page"].forEach((name) => next.delete(name));
@@ -279,16 +264,14 @@ export function LibraryPage() {
         tags={tags}
         tagsLoading={tagsQuery.isPending}
         tagsError={tagsQuery.isError}
-        searchValue={searchValue}
         hasActiveFilters={hasFilters}
-        onSearchChange={setSearchValue}
         onChange={updateFilter}
         onViewChange={updateView}
         onClearFilters={clearFilters}
       />
 
       {articlesQuery.isFetching && articlesQuery.data ? <p className="mb-4 text-sm text-[var(--text-muted)]" role="status">Memperbarui hasil library…</p> : null}
-      {articlesQuery.isPending ? <LibrarySkeleton /> : articlesQuery.isError ? <ErrorState message={getLibraryErrorMessage(articlesQuery.error)} onRetry={() => void articlesQuery.refetch()} /> : articlesQuery.data.data.length === 0 ? (
+      {articlesQuery.isPending ? <LibrarySkeleton /> : articlesQuery.isError ? <ErrorState message={getLibraryErrorMessage(articlesQuery.error)} onRetry={() => void articlesQuery.refetch()} /> : visibleArticles.length === 0 ? (
         <EmptyState
           title={emptyTitle}
           description={emptyDescription}
@@ -299,8 +282,8 @@ export function LibraryPage() {
       ) : (
         <>
           {state.view === "grid"
-            ? <ArticleGrid articles={articlesQuery.data.data} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId || tagMutation.isPending)} onUpdate={handleArticleUpdate} onDelete={requestDelete} availableTags={tags} tagsLoading={tagsQuery.isPending} tagsError={tagsQuery.error} onTagChange={handleTagChange} />
-            : <ArticleList articles={articlesQuery.data.data} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId || tagMutation.isPending)} onUpdate={handleArticleUpdate} onDelete={requestDelete} availableTags={tags} tagsLoading={tagsQuery.isPending} tagsError={tagsQuery.error} onTagChange={handleTagChange} />}
+            ? <ArticleGrid articles={visibleArticles} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId || tagMutation.isPending)} onUpdate={handleArticleUpdate} onDelete={requestDelete} availableTags={tags} tagsLoading={tagsQuery.isPending} tagsError={tagsQuery.error} onTagChange={handleTagChange} />
+            : <ArticleList articles={visibleArticles} actionPending={Boolean(pendingUpdateArticleId || pendingDeleteArticleId || tagMutation.isPending)} onUpdate={handleArticleUpdate} onDelete={requestDelete} availableTags={tags} tagsLoading={tagsQuery.isPending} tagsError={tagsQuery.error} onTagChange={handleTagChange} />}
           <LibraryPagination page={state.page} pagination={articlesQuery.data.pagination} onPageChange={changePage} />
         </>
       )}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   APPEARANCE_STORAGE_KEY,
   DEFAULT_APPEARANCE_PREFERENCES,
+  GLOBAL_THEME_STORAGE_KEY,
   getAppearanceStorage,
   isAppearanceStorageAvailable,
   normalizeAppearancePreferences,
@@ -39,9 +40,15 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    document.documentElement.dataset.theme = preferences.theme;
+    document.documentElement.style.colorScheme = preferences.theme;
+    document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute("content", preferences.theme === "dark" ? "#191816" : "#f3f0e8");
+  }, [preferences.theme]);
+
+  useEffect(() => {
     // Menyelaraskan tab lain tanpa menjadikan preference sebagai server state.
     function handleStorageChange(event: StorageEvent) {
-      if (event.key !== APPEARANCE_STORAGE_KEY && event.key !== READER_THEME_STORAGE_KEY) return;
+      if (event.key !== APPEARANCE_STORAGE_KEY && event.key !== GLOBAL_THEME_STORAGE_KEY && event.key !== READER_THEME_STORAGE_KEY) return;
       const nextPreferences = readAppearancePreferences(event.storageArea ?? getAppearanceStorage());
       preferencesRef.current = nextPreferences;
       setPreferences(nextPreferences);

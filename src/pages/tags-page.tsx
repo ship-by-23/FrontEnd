@@ -7,6 +7,7 @@ import { EmptyState, ErrorState, LoadingState } from "../components/feedback/sta
 import { Button } from "../components/ui/button";
 import { getLibraryArticles } from "../features/library/library-api";
 import { getLibraryErrorMessage } from "../features/library/library-utils";
+import { forgetArticleTagOverride, rememberArticleTagChange } from "../features/tags/article-tag-cache";
 import {
   createTag,
   deleteTag,
@@ -66,6 +67,7 @@ export function TagsPage() {
   const deleteMutation = useMutation({
     mutationFn: (tagId: string) => deleteTag(tagId),
     onSuccess: async () => {
+      if (deleteTarget) forgetArticleTagOverride(deleteTarget.id);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["tags"] }),
         queryClient.invalidateQueries({ queryKey: ["articles"] }),
@@ -203,7 +205,8 @@ export function TagDetailPage() {
 
   const detachMutation = useMutation({
     mutationFn: (articleId: string) => detachArticleTag(articleId, tagId ?? ""),
-    onSuccess: async () => {
+    onSuccess: async (_result, articleId) => {
+      if (activeTag) rememberArticleTagChange(articleId, activeTag, "detach");
       await queryClient.invalidateQueries({ queryKey: ["articles"] });
       setTagActionError(null);
       toast.success("Tag dilepas dari artikel.");

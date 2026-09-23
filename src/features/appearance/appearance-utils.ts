@@ -13,6 +13,7 @@ export type AppearancePreferences = {
 export type AppearanceStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 export const APPEARANCE_STORAGE_KEY = "simpandulu-appearance";
+export const GLOBAL_THEME_STORAGE_KEY = "simpandulu-theme";
 export const READER_THEME_STORAGE_KEY = "reader-theme";
 
 export const DEFAULT_APPEARANCE_PREFERENCES: AppearancePreferences = {
@@ -74,7 +75,7 @@ export function readAppearancePreferences(storage: AppearanceStorage | null = ge
   try {
     const rawValue = storage.getItem(APPEARANCE_STORAGE_KEY);
     storedValue = rawValue ? JSON.parse(rawValue) as unknown : undefined;
-    legacyTheme = storage.getItem(READER_THEME_STORAGE_KEY);
+    legacyTheme = storage.getItem(GLOBAL_THEME_STORAGE_KEY) ?? storage.getItem(READER_THEME_STORAGE_KEY);
   } catch {
     return { ...DEFAULT_APPEARANCE_PREFERENCES };
   }
@@ -91,6 +92,7 @@ export function persistAppearancePreferences(
 
   try {
     storage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(preferences));
+    storage.setItem(GLOBAL_THEME_STORAGE_KEY, preferences.theme);
     return true;
   } catch {
     return false;

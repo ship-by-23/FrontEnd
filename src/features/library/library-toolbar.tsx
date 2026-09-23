@@ -1,8 +1,8 @@
-import { Grid2X2, List, Search, SlidersHorizontal, X } from "lucide-react";
+import { Grid2X2, List, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Dialog } from "../../components/ui/dialog";
-import { Input, Select } from "../../components/ui/form-controls";
+import { Select } from "../../components/ui/form-controls";
 import type { Tag } from "../../lib/api/types";
 import {
   LIBRARY_SORT_OPTIONS,
@@ -21,9 +21,7 @@ type FilterFieldsProps = {
 };
 
 type LibraryToolbarProps = FilterFieldsProps & {
-  searchValue: string;
   hasActiveFilters: boolean;
-  onSearchChange: (value: string) => void;
   onViewChange: (view: LibraryUrlState["view"]) => void;
   onClearFilters: () => void;
 };
@@ -82,10 +80,8 @@ export function LibraryToolbar({
   tags,
   tagsLoading,
   tagsError,
-  searchValue,
   hasActiveFilters,
   onChange,
-  onSearchChange,
   onViewChange,
   onClearFilters,
 }: LibraryToolbarProps) {
@@ -103,31 +99,18 @@ export function LibraryToolbar({
 
   return (
     <section className="my-6 border-y border-[var(--border)] py-4" aria-label="Kontrol library">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <label className="relative min-w-0 flex-1">
-          <span className="sr-only">Cari di library</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--text-muted)]" aria-hidden="true" />
-          <Input
-            type="search"
-            value={searchValue}
-            className="pl-10"
-            placeholder="Cari judul, deskripsi, atau isi…"
-            onChange={(event) => onSearchChange(event.target.value)}
-          />
-        </label>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" className="lg:hidden" onClick={openFilterDialog}>
-            <SlidersHorizontal className="size-4" aria-hidden="true" />Filter
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" className="lg:hidden" onClick={openFilterDialog}>
+          <SlidersHorizontal className="size-4" aria-hidden="true" />Filter
+        </Button>
+        {hasActiveFilters ? <Button variant="ghost" onClick={onClearFilters}><X className="size-4" aria-hidden="true" />Bersihkan filter</Button> : null}
+        <div className="flex border border-[var(--border)]" aria-label="Mode tampilan">
+          <Button className="rounded-none border-0 px-3" variant={state.view === "grid" ? "primary" : "ghost"} aria-label="Tampilan grid" aria-pressed={state.view === "grid"} onClick={() => onViewChange("grid")}>
+            <Grid2X2 className="size-4" aria-hidden="true" />
           </Button>
-          {hasActiveFilters ? <Button variant="ghost" onClick={onClearFilters}><X className="size-4" aria-hidden="true" />Bersihkan filter</Button> : null}
-          <div className="flex border border-[var(--border)]" aria-label="Mode tampilan">
-            <Button className="rounded-none border-0 px-3" variant={state.view === "grid" ? "primary" : "ghost"} aria-label="Tampilan grid" aria-pressed={state.view === "grid"} onClick={() => onViewChange("grid")}>
-              <Grid2X2 className="size-4" aria-hidden="true" />
-            </Button>
-            <Button className="rounded-none border-0 px-3" variant={state.view === "list" ? "primary" : "ghost"} aria-label="Tampilan list" aria-pressed={state.view === "list"} onClick={() => onViewChange("list")}>
-              <List className="size-4" aria-hidden="true" />
-            </Button>
-          </div>
+          <Button className="rounded-none border-0 px-3" variant={state.view === "list" ? "primary" : "ghost"} aria-label="Tampilan list" aria-pressed={state.view === "list"} onClick={() => onViewChange("list")}>
+            <List className="size-4" aria-hidden="true" />
+          </Button>
         </div>
       </div>
 

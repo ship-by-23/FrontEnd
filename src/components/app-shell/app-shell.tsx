@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "motion/react";
-import { BookOpen, BookmarkPlus, Highlighter, Library, LogOut, Menu, Search, Settings, Tags, X } from "lucide-react";
+import { BookmarkPlus, Highlighter, Library, Menu, Search, Settings, Tags, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { toast } from "sonner";
 import { useAuth } from "../../features/auth/auth-context";
 import { cn } from "../../lib/utils";
+import { Brand } from "../brand/brand";
 import { Button } from "../ui/button";
+import { ThemeSwitch } from "../ui/theme-switch";
 
 const navigation = [
   { to: "/library", label: "Library", icon: Library },
@@ -16,22 +17,18 @@ const navigation = [
   { to: "/settings/profile", label: "Pengaturan", icon: Settings },
 ];
 
+function getInitials(name?: string | null) {
+  const initials = name?.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  return initials || "SD";
+}
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { user, logout } = useAuth();
-
-  // Mengakhiri session lokal dan memberi tahu user jika pencabutan server gagal.
-  async function handleLogout() {
-    const serverLogoutSucceeded = await logout();
-    if (!serverLogoutSucceeded) toast.error("Session lokal sudah diakhiri, tetapi server belum dapat dihubungi.");
-  }
-
   return (
     <div className="flex h-full flex-col">
-      <Link to="/library" onClick={onNavigate} className="flex min-h-20 items-center gap-3 border-b border-[var(--border)] px-6">
-        <BookOpen aria-hidden="true" />
-        <span className="font-editorial text-2xl font-semibold">SimpanDulu</span>
+      <Link to="/library" onClick={onNavigate} aria-label="SimpanDulu — pustaka" className="flex min-h-16 items-center border-b border-[var(--border)] px-4">
+        <Brand compact className="max-w-full" />
       </Link>
-      <nav aria-label="Navigasi utama" className="grid gap-1 p-3">
+      <nav aria-label="Navigasi utama" className="grid flex-1 content-start gap-1 p-3">
         {navigation.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
@@ -46,20 +43,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </NavLink>
         ))}
       </nav>
-      <div className="mt-auto border-t border-[var(--border)] p-4">
-        <p className="truncate text-sm font-semibold">{user?.name}</p>
-        <p className="truncate text-xs text-[var(--text-muted)]">{user?.email}</p>
-        <Button variant="ghost" className="mt-3 w-full justify-start" onClick={() => void handleLogout()}>
-          <LogOut className="size-4" aria-hidden="true" />Keluar
-        </Button>
-      </div>
     </div>
   );
 }
 
-// Menyediakan navigasi konsisten dan drawer aksesibel untuk seluruh route terproteksi.
+// Menyediakan navigasi konsisten, scroll terpisah, dan drawer aksesibel untuk seluruh route terproteksi.
 export function AppShell() {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
   const drawerRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -104,20 +95,25 @@ export function AppShell() {
     };
   }, [open]);
 
-  // Menutup drawer dari tombol backdrop atau navigasi tanpa mengubah URL secara manual.
   function closeNavigation() {
     setOpen(false);
   }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
-      <a href="#main-content" className="fixed left-3 top-3 z-50 -translate-y-20 bg-[var(--text)] px-4 py-2 text-white focus:translate-y-0">Lewati ke konten</a>
-      <aside className="hidden border-r border-[var(--border)] bg-[var(--surface)] lg:block"><SidebarContent /></aside>
-      <div className="min-w-0">
+    <div className="min-h-screen lg:grid lg:h-screen lg:grid-cols-[260px_1fr] lg:overflow-hidden">
+      <a href="#main-content" className="fixed left-3 top-3 z-50 -translate-y-20 bg-[var(--text)] px-4 py-2 text-[var(--surface)] focus:translate-y-0">Lewati ke konten</a>
+      <aside className="hidden h-screen overflow-y-auto overscroll-contain border-r border-[var(--border)] bg-[var(--surface)] lg:block"><SidebarContent /></aside>
+      <div data-app-scroll-container className="min-w-0 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
         <header className="sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-[var(--border)] bg-[color:var(--cream)]/95 px-4 backdrop-blur-sm lg:px-8">
           <Button variant="ghost" className="px-3 lg:hidden" aria-label="Buka navigasi" aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(true)}><Menu aria-hidden="true" /></Button>
-          <Link to="/library" className="font-editorial text-xl font-semibold lg:hidden">SimpanDulu</Link>
-          <span className="ml-auto hidden text-xs uppercase tracking-[0.2em] text-[var(--text-muted)] sm:block">Pustaka bacaan pribadi</span>
+          <Link to="/library" aria-label="SimpanDulu — pustaka" className="lg:hidden"><Brand compact /></Link>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeSwitch />
+            <Link to="/settings/profile" className="group flex min-h-10 items-center gap-2 rounded-[3px] px-1.5 transition-colors hover:bg-[var(--surface-muted)]" aria-label="Buka profil pengguna">
+              <span className="grid size-8 place-items-center rounded-full bg-[var(--accent)] text-[10px] font-bold text-[var(--text)]" aria-hidden="true">{getInitials(user?.name)}</span>
+              <span className="hidden text-left sm:block"><span className="block max-w-36 truncate text-xs font-semibold">{user?.name}</span><span className="block text-[10px] text-[var(--text-muted)]">Profil</span></span>
+            </Link>
+          </div>
         </header>
         <main id="main-content" className="page-enter mx-auto w-full max-w-[1440px] p-4 sm:p-6 lg:p-10"><Outlet /></main>
       </div>

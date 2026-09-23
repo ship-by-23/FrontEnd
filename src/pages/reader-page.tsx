@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { LoadingState } from "../components/feedback/states";
@@ -31,6 +31,7 @@ import {
   getScrollPositionForProgress,
   READER_PROGRESS_THROTTLE_MS,
 } from "../features/reader/reader-utils";
+import type { ArticleCollection } from "../lib/api/types";
 import { cn } from "../lib/utils";
 
 type ProgressSaveState = "idle" | "saving" | "saved" | "error";
@@ -46,6 +47,7 @@ export function ReaderPage() {
   const [extractionPollingTimeoutKey, setExtractionPollingTimeoutKey] = useState<string | null>(null);
   const [extractionPollingAttempt, setExtractionPollingAttempt] = useState(0);
   const readerContentRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
   const readerBodyRef = useRef<HTMLElement | null>(null);
   const pendingProgressRef = useRef<ReadingProgressInput | null>(null);
   const progressTimerRef = useRef<number | null>(null);
@@ -59,6 +61,39 @@ export function ReaderPage() {
   const updateReadingProgressRef = useRef<() => void>(() => undefined);
   const extractionPollingKey = articleId ? `${articleId}:${extractionPollingAttempt}` : null;
   const extractionPollingTimedOut = extractionPollingKey !== null && extractionPollingTimeoutKey === extractionPollingKey;
+
+  useEffect(() => {
+    scrollContainerRef.current = document.querySelector<HTMLElement>("[data-app-scroll-container]");
+    return () => {
+      scrollContainerRef.current = null;
+    };
+  }, []);
+
+  const getActiveScrollContainer = useCallback(() => {
+    const candidate = scrollContainerRef.current;
+    if (!candidate) return null;
+    const overflowY = window.getComputedStyle(candidate).overflowY;
+    return overflowY === "auto" || overflowY === "scroll" ? candidate : null;
+  }, []);
+
+  const getScrollMetrics = useCallback(() => {
+    const scrollContainer = getActiveScrollContainer();
+    if (!scrollContainer) {
+      return {
+        scrollContainer: null,
+        scrollOffset: window.scrollY,
+        viewportHeight: window.innerHeight,
+        viewportTop: 0,
+      };
+    }
+
+    return {
+      scrollContainer,
+      scrollOffset: scrollContainer.scrollTop,
+      viewportHeight: scrollContainer.clientHeight || window.innerHeight,
+      viewportTop: scrollContainer.getBoundingClientRect().top,
+    };
+  }, [getActiveScrollContainer]);
 
   const articleQuery = useQuery({
     queryKey: ["article", articleId],
@@ -117,6 +152,28 @@ export function ReaderPage() {
         await saveReadingProgress(articleId, snapshot);
         lastProgressPersistedAtRef.current = Date.now();
         setProgressSaveState("saved");
+        queryClient.setQueriesData<ArticleCollection>({ queryKey: ["articles"] }, (current) => {
+          if (!current) return current;
+
+          return {
+            ...current,
+            data: current.data.map((item) => {
+              if (item.id !== articleId) return item;
+
+              const nextProgress = snapshot.readingProgress;
+              const nextStatus = nextProgress > 0 && item.readingStatus === "unread" ? "reading" : item.readingStatus;
+              const nextAnchor = snapshot.readingAnchor === undefined ? item.readingAnchor : snapshot.readingAnchor;
+              return {
+                ...item,
+                readingProgress: nextProgress,
+                readingAnchor: nextAnchor,
+                readingStatus: nextStatus,
+              };
+            }),
+          };
+        });
+        // Tandai cache library stale agar kartu membaca ulang progress terbaru saat user kembali.
+        void queryClient.invalidateQueries({ queryKey: ["articles"] });
       } catch {
         pendingProgressRef.current = pendingProgressRef.current ?? snapshot;
         setProgressSaveState("error");
@@ -162,11 +219,12 @@ export function ReaderPage() {
     const container = readerContentRef.current;
     if (!container || !readerBodyRef.current || article?.readingStatus === "finished") return;
 
-    const progress = calculateReadingProgress(container, window.scrollY, window.innerHeight);
+    const { scrollOffset, viewportHeight, viewportTop } = getScrollMetrics();
+    const progress = calculateReadingProgress(container, scrollOffset, viewportHeight, viewportTop);
     setVisualProgress((current) => current === progress ? current : progress);
     if (isRestoringRef.current) return;
 
-    const visibleAnchor = findVisibleReaderAnchor(readerBodyRef.current, window.innerHeight);
+    const visibleAnchor = findVisibleReaderAnchor(readerBodyRef.current, viewportHeight, viewportTop);
     if (visibleAnchor) currentAnchorRef.current = visibleAnchor;
     scheduleProgressSave({
       readingProgress: progress,
@@ -223,10 +281,10 @@ export function ReaderPage() {
       if (anchorElement) {
         anchorElement.scrollIntoView({ block: "start", behavior: "auto" });
       } else if (article.readingProgress !== null && article.readingProgress !== undefined) {
-        window.scrollTo({
-          top: getScrollPositionForProgress(currentContainer, article.readingProgress, window.innerHeight, window.scrollY),
-          behavior: "auto",
-        });
+        const { scrollContainer, scrollOffset, viewportHeight, viewportTop } = getScrollMetrics();
+        const top = getScrollPositionForProgress(currentContainer, article.readingProgress, viewportHeight, scrollOffset, viewportTop);
+        if (scrollContainer) scrollContainer.scrollTo({ top, behavior: "auto" });
+        else window.scrollTo({ top, behavior: "auto" });
       }
 
       window.requestAnimationFrame(() => {
@@ -235,12 +293,14 @@ export function ReaderPage() {
     });
 
     return () => window.cancelAnimationFrame(frameId);
-  }, [article]);
+  }, [article, getScrollMetrics]);
 
   useEffect(() => {
     if (!article || article.extractionStatus !== "completed") return;
 
     let frameId: number | null = null;
+    const scrollContainer = getActiveScrollContainer();
+    const scrollTarget: Window | HTMLElement = scrollContainer ?? window;
     const handleScrollOrResize = () => {
       if (frameId !== null) return;
       frameId = window.requestAnimationFrame(() => {
@@ -250,15 +310,15 @@ export function ReaderPage() {
     };
 
     handleScrollOrResize();
-    window.addEventListener("scroll", handleScrollOrResize, { passive: true });
+    scrollTarget.addEventListener("scroll", handleScrollOrResize, { passive: true });
     window.addEventListener("resize", handleScrollOrResize);
 
     return () => {
       if (frameId !== null) window.cancelAnimationFrame(frameId);
-      window.removeEventListener("scroll", handleScrollOrResize);
+      scrollTarget.removeEventListener("scroll", handleScrollOrResize);
       window.removeEventListener("resize", handleScrollOrResize);
     };
-  }, [article]);
+  }, [article, getActiveScrollContainer]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {

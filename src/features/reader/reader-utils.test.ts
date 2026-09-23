@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ApiError } from "../../lib/api/client";
 import {
   clampReadingProgress,
+  calculateReadingProgress,
   getReaderErrorMessage,
   getSafeReaderSourceUrl,
 } from "./reader-utils";
@@ -11,6 +12,14 @@ describe("reader utilities", () => {
     expect(clampReadingProgress(-10)).toBe(0);
     expect(clampReadingProgress(42.6)).toBe(43);
     expect(clampReadingProgress(120)).toBe(100);
+  });
+
+  it("menghitung progress dari scroll container kanan, bukan window scroll", () => {
+    const reader = {
+      getBoundingClientRect: () => ({ top: -100, height: 1_000 }),
+    } as HTMLElement;
+
+    expect(calculateReadingProgress(reader, 220, 600, 100)).toBe(50);
   });
 
   it("hanya menerima sumber HTTP dan HTTPS", () => {

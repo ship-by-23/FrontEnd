@@ -11,7 +11,18 @@ export type User = {
   name: string;
   email: string;
   role?: "user" | "admin";
+  createdAt?: string;
+  updatedAt?: string;
 };
+
+export type AuthSession = {
+  user: User;
+  accessToken: string;
+  tokenType: "Bearer";
+  expiresIn: number;
+};
+
+export type AuthSessionResponse = { data: AuthSession };
 
 export type ExtractionStatus = "pending" | "processing" | "completed" | "failed";
 export type ReadingStatus = "unread" | "reading" | "finished";
@@ -26,12 +37,16 @@ export type Tag = {
 
 export type ArticleSummary = {
   id: string;
+  submittedUrl?: string;
+  canonicalUrl?: string | null;
   title: string | null;
   description?: string | null;
   siteName?: string | null;
   snippet?: string | null;
   author?: string | null;
+  publishedAt?: string | null;
   imageUrl?: string | null;
+  wordCount?: number | null;
   estimatedReadingMinutes?: number | null;
   readingStatus: ReadingStatus;
   readingProgress?: number | null;
@@ -42,17 +57,22 @@ export type ArticleSummary = {
   extractionErrorCode?: string | null;
   createdAt: string;
   updatedAt?: string | null;
+  finishedAt?: string | null;
+  rank?: number | null;
   tags?: Tag[];
 };
 
 export type Article = ArticleSummary & {
   submittedUrl: string;
-  canonicalUrl?: string | null;
-  publishedAt?: string | null;
   contentHtml?: string | null;
   contentText?: string | null;
-  wordCount?: number | null;
-  finishedAt?: string | null;
+};
+
+export type ArticleSubmission = {
+  id: string;
+  submittedUrl: string;
+  extractionStatus: ExtractionStatus;
+  extractionErrorCode?: string | null;
 };
 
 export type Pagination = {

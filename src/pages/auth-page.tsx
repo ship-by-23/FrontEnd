@@ -5,6 +5,7 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Field, Input } from "../components/ui/form-controls";
 import { PasswordField } from "../components/ui/password-field";
+import { ThemeSwitch } from "../components/ui/theme-switch";
 import { useAuth } from "../features/auth/auth-context";
 import { loginUser, registerUser } from "../features/auth/auth-api";
 import { getAuthErrorMessage, getAuthNotice, getSafeDestination, validateAuthForm, type AuthField, type AuthFormErrors, type AuthFormFields } from "../features/auth/auth-utils";
@@ -93,7 +94,10 @@ export function AuthPage({ mode }: AuthPageProps) {
       </section>
       <section className="flex items-center justify-center p-5 sm:p-10">
         <div className="w-full max-w-md">
-          <Link to="/" className="mb-12 inline-flex items-center gap-2 text-sm font-semibold"><ArrowLeft className="size-4" aria-hidden="true" />Kembali</Link>
+          <div className="mb-12 flex items-center justify-between gap-4">
+            <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold"><ArrowLeft className="size-4" aria-hidden="true" />Kembali</Link>
+            <ThemeSwitch />
+          </div>
           <h1 className="font-editorial text-5xl font-semibold">{isRegister ? "Buat akun" : "Selamat datang kembali"}</h1>
           <p className="mt-3 text-[var(--text-muted)]">{isRegister ? "Mulai susun pustaka bacaan pribadimu." : "Masuk untuk melanjutkan bacaanmu."}</p>
           {notice ? <p className="border-l-2 border-[var(--success)] pl-3 text-sm text-[var(--success)]" role="status">{notice}</p> : null}
