@@ -8,6 +8,14 @@ export type ReaderSelection = {
   left: number;
 };
 
+// Memprioritaskan snapshot selection yang diambil sebelum dialog memindahkan fokus.
+export function getHighlightSelectionForSubmit(
+  pendingSelection: ReaderSelection | null,
+  currentSelection: ReaderSelection | null,
+) {
+  return pendingSelection ?? currentSelection;
+}
+
 // Menghitung offset teks relatif terhadap seluruh isi Reader tanpa mengubah DOM selection native.
 function getBoundaryTextOffset(root: HTMLElement, container: Node, offset: number) {
   if (container !== root && !root.contains(container)) return null;

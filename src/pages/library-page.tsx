@@ -254,7 +254,7 @@ export function LibraryPage() {
           <h1 className="font-editorial mt-1 text-5xl font-semibold">Library</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Satu ruang untuk artikel yang ingin kamu baca, kelola, dan temukan kembali.</p>
         </div>
-        <Link to="/articles/new" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[3px] border border-[var(--border)] bg-[var(--text)] px-4 text-sm font-semibold text-white">
+        <Link to="/articles/new" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[3px] border border-[var(--border)] bg-[var(--text)] px-4 text-sm font-semibold text-[var(--surface)]">
           <Plus className="size-4" aria-hidden="true" />Simpan artikel
         </Link>
       </header>
@@ -277,7 +277,7 @@ export function LibraryPage() {
           description={emptyDescription}
           action={hasFilters
             ? <Button variant="secondary" onClick={clearFilters}>Bersihkan filter</Button>
-            : <Link to="/articles/new" className="inline-flex min-h-11 items-center gap-2 border border-[var(--border)] bg-[var(--text)] px-4 text-sm font-semibold text-white"><BookOpen className="size-4" aria-hidden="true" />Simpan artikel pertama</Link>}
+            : <Link to="/articles/new" className="inline-flex min-h-11 items-center gap-2 border border-[var(--border)] bg-[var(--text)] px-4 text-sm font-semibold text-[var(--surface)]"><BookOpen className="size-4" aria-hidden="true" />Simpan artikel pertama</Link>}
         />
       ) : (
         <>

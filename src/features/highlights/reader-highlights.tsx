@@ -21,7 +21,11 @@ import {
   getHighlightMutationErrorMessage,
   normalizeHighlightNote,
 } from "./highlights-utils";
-import { getReaderSelection, type ReaderSelection } from "./selection-utils";
+import {
+  getHighlightSelectionForSubmit,
+  getReaderSelection,
+  type ReaderSelection,
+} from "./selection-utils";
 import { ReaderBody } from "../reader/reader-components";
 import type { ReaderFont, ReaderTextSize } from "../appearance/appearance-utils";
 
@@ -42,6 +46,7 @@ type CreateHighlightVariables = {
 export function ReaderHighlights({ article, dark, readerFont, textSize, bodyRef }: ReaderHighlightsProps) {
   const queryClient = useQueryClient();
   const [selection, setSelection] = useState<ReaderSelection | null>(null);
+  const [pendingSelection, setPendingSelection] = useState<ReaderSelection | null>(null);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Highlight | null>(null);
 
@@ -89,6 +94,8 @@ export function ReaderHighlights({ article, dark, readerFont, textSize, bodyRef 
   });
 
   useEffect(() => {
+    let frameId: number | null = null;
+
     // Membaca selection dari event browser tanpa menghentikan selection native atau keyboard selection.
     function handleSelectionChange() {
       const root = bodyRef.current;
@@ -103,21 +110,34 @@ export function ReaderHighlights({ article, dark, readerFont, textSize, bodyRef 
       });
     }
 
-    document.addEventListener("selectionchange", handleSelectionChange);
-    document.addEventListener("keyup", handleSelectionChange);
-    window.addEventListener("resize", handleSelectionChange);
-    window.addEventListener("scroll", handleSelectionChange, { passive: true });
+    // Beberapa dokumen hasil ekstraksi baru menstabilkan Range setelah pointer dilepas.
+    function scheduleSelectionRead() {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null;
+        handleSelectionChange();
+      });
+    }
+
+    document.addEventListener("selectionchange", scheduleSelectionRead);
+    document.addEventListener("pointerup", scheduleSelectionRead);
+    document.addEventListener("keyup", scheduleSelectionRead);
+    window.addEventListener("resize", scheduleSelectionRead);
+    window.addEventListener("scroll", scheduleSelectionRead, { passive: true });
     return () => {
-      document.removeEventListener("selectionchange", handleSelectionChange);
-      document.removeEventListener("keyup", handleSelectionChange);
-      window.removeEventListener("resize", handleSelectionChange);
-      window.removeEventListener("scroll", handleSelectionChange);
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      document.removeEventListener("selectionchange", scheduleSelectionRead);
+      document.removeEventListener("pointerup", scheduleSelectionRead);
+      document.removeEventListener("keyup", scheduleSelectionRead);
+      window.removeEventListener("resize", scheduleSelectionRead);
+      window.removeEventListener("scroll", scheduleSelectionRead);
     };
   }, [bodyRef]);
 
   // Menghapus selection browser setelah mutation selesai agar toolbar tidak tertinggal pada quote lama.
   function clearSelection() {
     window.getSelection()?.removeAllRanges();
+    setPendingSelection(null);
     setSelection(null);
   }
 
@@ -132,13 +152,15 @@ export function ReaderHighlights({ article, dark, readerFont, textSize, bodyRef 
   function handleOpenNoteDialog() {
     if (!selection || createMutation.isPending) return;
     createMutation.reset();
+    setPendingSelection(selection);
     setNoteDialogOpen(true);
   }
 
   // Membuat highlight dari selection aktif dan note yang diisi user.
   async function handleCreateWithNote(note: string) {
-    if (!selection) return;
-    await createMutation.mutateAsync({ selection, note });
+    const activeSelection = getHighlightSelectionForSubmit(pendingSelection, selection);
+    if (!activeSelection) return;
+    await createMutation.mutateAsync({ selection: activeSelection, note });
   }
 
   // Mengirim perubahan note dari dialog edit ke endpoint PATCH resmi.
@@ -155,6 +177,8 @@ export function ReaderHighlights({ article, dark, readerFont, textSize, bodyRef 
       setEditTarget(target);
     }
   }
+
+  const noteSelection = pendingSelection ?? selection;
 
   return (
     <div className="relative">
@@ -195,12 +219,15 @@ export function ReaderHighlights({ article, dark, readerFont, textSize, bodyRef 
 
       <CreateHighlightNoteDialog
         open={noteDialogOpen}
-        selection={selection}
+        selection={noteSelection}
         error={createMutation.error}
         isPending={createMutation.isPending}
         errorMessage={getHighlightMutationErrorMessage(createMutation.error, "create")}
         onClose={() => {
-          if (!createMutation.isPending) setNoteDialogOpen(false);
+          if (!createMutation.isPending) {
+            setPendingSelection(null);
+            setNoteDialogOpen(false);
+          }
         }}
         onSubmit={handleCreateWithNote}
       />
