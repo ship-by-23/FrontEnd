@@ -640,19 +640,57 @@ export function HighlightsSection() {
   );
 }
 
+// Memperlihatkan cara tag bekerja di dalam library, bukan sekadar dekorasi abstrak.
+function TagsVisual() {
+  const tagItems = [
+    { label: "Design system", count: 12, active: true },
+    { label: "Kuliah", count: 8, active: false },
+    { label: "Frontend", count: 6, active: false },
+  ];
+
+  return (
+    <div className="overflow-hidden border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_0_rgba(28,28,26,0.05)]" aria-label="Pratinjau pengelompokan artikel dengan tag" role="img">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <div className="flex size-8 items-center justify-center border border-[var(--border)] bg-[var(--cream)]"><Tag className="size-4 text-[var(--success)]" aria-hidden="true" /></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Organization</p><p className="mt-0.5 text-sm font-semibold">Tag library</p></div>
+        </div>
+        <span className="border border-[var(--border-muted)] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">26 bacaan</span>
+      </div>
+
+      <div className="grid min-h-[310px] sm:grid-cols-[0.42fr_0.58fr]">
+        <div className="border-b border-[var(--border)] bg-[var(--surface-muted)] p-4 sm:border-b-0 sm:border-r sm:p-5">
+          <div className="mb-4 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]"><span>Tag kamu</span><span>03</span></div>
+          <div className="grid gap-2">
+            {tagItems.map((item) => (
+              <div key={item.label} className={cn("flex items-center justify-between border px-3 py-3 text-xs", item.active ? "border-[var(--text)] bg-[var(--text)] text-[var(--surface)]" : "border-[var(--border-muted)] bg-[var(--surface)] text-[var(--text-muted)]")}>
+                <span className="flex items-center gap-2"><span className={cn("size-1.5 rounded-full", item.active ? "bg-[var(--accent)]" : "bg-[var(--border)]")} />{item.label}</span>
+                <span className="font-mono text-[10px] opacity-70">{String(item.count).padStart(2, "0")}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-[10px] leading-5 text-[var(--text-muted)]">Satu bacaan dapat memakai beberapa tag sekaligus.</p>
+        </div>
+
+        <div className="p-4 sm:p-5">
+          <div className="mb-4 flex items-center justify-between"><div><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Menampilkan</p><p className="mt-1 text-sm font-semibold">Design system</p></div><ListFilter className="size-4 text-[var(--text-muted)]" aria-hidden="true" /></div>
+          <div className="grid gap-3">
+            <div className="border border-[var(--border)] p-4"><div className="mb-3 flex items-center justify-between text-[9px] uppercase tracking-[0.12em] text-[var(--text-muted)]"><span>uxdesign.cc</span><Bookmark className="size-3.5" aria-hidden="true" /></div><p className="font-editorial text-xl font-semibold leading-tight">Design tokens that scale</p><div className="mt-4 flex gap-2"><span className="bg-[var(--accent)] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.1em]">Design system</span><span className="border border-[var(--border-muted)] px-2 py-1 text-[8px] uppercase tracking-[0.1em]">Frontend</span></div></div>
+            <div className="border border-[var(--border-muted)] p-4"><div className="mb-3 text-[9px] uppercase tracking-[0.12em] text-[var(--text-muted)]">smashingmagazine.com</div><p className="font-editorial text-xl font-semibold leading-tight">A practical guide to component libraries</p><div className="mt-4 flex items-center justify-between"><span className="bg-[var(--accent)] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.1em]">Design system</span><span className="text-[9px] text-[var(--text-muted)]">8 min</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Menjelaskan pengelompokan bacaan dengan tags tanpa membuat koleksi palsu.
 export function TagsSection() {
   return (
     <section className="mx-auto max-w-[1320px] px-5 py-24 sm:px-8 sm:py-32 lg:px-10" aria-labelledby="tags-heading">
       <div className="grid items-center gap-14 lg:grid-cols-[1fr_0.8fr] lg:gap-24">
         <Reveal>
-          <div className="relative min-h-[300px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:min-h-[360px] sm:p-8" aria-label="Ilustrasi tag abstrak" role="img">
-            <div className="absolute left-5 top-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)] sm:left-8 sm:top-8">organize softly</div>
-            <div className="absolute left-[18%] top-[35%] flex items-center gap-2 border border-[var(--border)] bg-[var(--cream)] px-4 py-3 text-xs font-semibold"><Tag className="size-4 text-[var(--success)]" aria-hidden="true" /> TAG A</div>
-            <div className="absolute right-[16%] top-[28%] border border-[var(--border-muted)] px-4 py-3 text-xs">TAG B</div>
-            <div className="absolute bottom-[25%] left-[33%] border border-[var(--border-muted)] px-4 py-3 text-xs">TAG C</div>
-            <div className="absolute bottom-5 left-5 right-5 h-px bg-[var(--border-muted)] sm:bottom-8 sm:left-8 sm:right-8" />
-          </div>
+          <TagsVisual />
         </Reveal>
         <Reveal delay={0.12}>
           <SectionHeader eyebrow="Organization" title="Rapi tanpa ribet." description="Gunakan tag untuk mengelompokkan bacaan berdasarkan topik, mata kuliah, teknologi, atau konteks yang kamu perlukan." headingId="tags-heading" />
